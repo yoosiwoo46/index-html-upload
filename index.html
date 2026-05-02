@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>代驾司机模拟器 V1.3</title>
 <style>
-/* ========== Dark Luxury Gold ========== */
+/* ========== 暗金奢华 Dark Luxury Gold ========== */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
   --bg-primary: #1a1a1a;
@@ -496,7 +496,7 @@ hr {
   <div class="stat-item"><span class="stat-label">服务分:</span><span class="stat-value" id="sb-service">-</span></div>
   <div class="stat-item"><span class="stat-label">日期:</span><span class="stat-value" id="sb-date">-</span></div>
   <div class="stat-item"><span class="stat-label">时间:</span><span class="stat-value" id="sb-time">-</span></div>
-  <div class="stat-item"><span class="stat-label">📍</span><span class="stat-value" id="sb-location2" style="color:var(--success);">-</span></div>
+  <div class="stat-item"><span class="stat-label">📍</span><span class="stat-value" id="sb-location" style="color:var(--success);">-</span></div>
   <div class="stat-item" id="sb-loan-info" style="display:none;"><span class="stat-label">贷款:</span><span class="stat-value danger" id="sb-loan">-</span></div>
   <div class="stat-item"><span class="stat-label">征信:</span><span class="stat-value" id="sb-credit">-</span></div>
 </div>
@@ -640,6 +640,7 @@ const HOLIDAYS = [
 
 let G = null; // 全局游戏状态
 let gameTimer = null; // 游戏循环定时器
+let dispatchTimers = {}; // 各平台派单定时器
 
 function newGameState() {
   return {
@@ -834,118 +835,6 @@ function formatDate(d) {
   return d.year + '年' + d.month + '月' + d.day + '日';
 }
 
-function resetAllListening() {
-  for (let pk of ['DD','GD','E']) {
-    G.platforms[pk].onlineMinutesToday = 0;
-    if (G.platforms[pk].listening) {
-      G.platforms[pk].listening = false;
-      G.platforms[pk]._listenStartGameMinutes = null;
-      stopDispatchTimer(pk);
-    }
-  }
-}
-
-function recordRejection(pk) {
-  let p = G.platforms[pk];
-  if (!p) return;
-  p.rejectCount7++;
-  p.rejectCount30++;
-  if (p.rejectCount7 >= 10) { p.serviceScore = Math.max(0, p.serviceScore - 10); p.rejectCount7 = 0; }
-  if (p.rejectCount30 >= 50) { p.daijiaScore = Math.max(0, p.daijiaScore - 2); p.rejectCount30 = 0; }
-}
-
-function getWeatherIcon() {
-  if (G.weather === '晴天') return '☀️';
-  if (G.weather === '多云') return '⛅';
-  if (G.weather === '下雨') return '🌧️';
-  if (G.weather === '下雪') return '❄️';
-  return '🌤️';
-}
-
-function randomDistance65_28_5_2() {
-  let distRand = Math.random();
-  if (distRand < 0.65) return randInt(1, 20);
-  else if (distRand < 0.93) return randInt(20, 40);
-  else if (distRand < 0.98) return randInt(40, 60);
-  else return randInt(60, 100);
-}
-
-function randomBaoShiHours() {
-  let r = Math.random();
-  if (r < 0.85) return randInt(1, 24) / 2;
-  else if (r < 0.98) return randInt(24, 48) / 2;
-  else return randInt(48, 96) / 2;
-}
-
-function checkWeatherInjury() {
-  if ((G.weather === '下雨' || G.weather === '下雪') && chance(5) && !G.injured) {
-    G.injured = true;
-    G.injuredUntilDay = getGameDayIndex() + 7;
-    G.player.money += 1000;
-    addLog('🏥 恶劣天气受伤！保险赔付1000元，休息7天', 'bad');
-    showModal('受伤了！', '<p style="color:var(--danger);">恶劣天气导致受伤！</p><p>保险赔付1000元，需要休息7天</p>', [{text:'确定', cls:'btn-primary', action: function(){ closeModal(); }}]);
-    return true;
-  }
-  return false;
-}
-
-function showAccidentDialog(damage, platform, context, order) {
-  let hasPlatform = platform && G.platforms[platform] && G.platforms[platform].joined;
-  let html2 = '<p style="color:var(--danger);">' + context + '，赔偿金额：' + damage + '元</p>';
-  html2 += '<p style="font-size:13px;margin-top:8px;">请选择处理方式：</p>';
-  html2 += '<p style="font-size:12px;color:var(--text-secondary);">① 私了：承担全部' + damage + '元，平台不扣分</p>';
-  if (hasPlatform) {
-    html2 += '<p style="font-size:12px;color:var(--text-secondary);">② 平台理赔：最多承担1500元，' + platform + '扣6代驾分+10服务分</p>';
-  }
-  let buttons2 = [
-    {text:'私了（' + damage + '元）', cls:'btn-warning', action: function(){
-      closeModal();
-      G.player.money -= damage; G.totalExpense += damage;
-      addExpenseRecord('车损赔偿', damage);
-      addLog('💥 ' + context + '私了，赔偿' + damage + '元', 'bad');
-      if (order) startDriving(order);
-    }}
-  ];
-  if (hasPlatform) {
-    buttons2.push({text:'平台理赔（最多1500元）', cls:'btn-danger', action: function(){
-      closeModal();
-      let userDamage = Math.min(damage, 1500);
-      G.player.money -= userDamage; G.totalExpense += userDamage;
-      addExpenseRecord('车损赔偿', userDamage);
-      let p2 = G.platforms[platform];
-      p2.daijiaScore = Math.max(0, p2.daijiaScore - 6);
-      p2.serviceScore = Math.max(0, p2.serviceScore - 10);
-      addLog('💥 ' + context + '理赔，赔偿' + userDamage + '元，代驾分-6，服务分-10', 'bad');
-      if (p2.daijiaScore <= 0) { handleDaijiaScoreZero(platform); } else { if (order) startDriving(order); }
-    }});
-  }
-  showModal('事故处理', html2, buttons2);
-}
-
-function getIncomeRange() {
-  let years = getElapsedYears();
-  if (years < 1) return {min: 60, max: 80};
-  else if (years < 2) return {min: 70, max: 100};
-  else return {min: 80, max: 130};
-}
-
-function applyCheaterEffect(crossCity, mode, distance, income) {
-  if (!G.hasCheater || crossCity) return {distance, income};
-  distance = randInt(100, 200);
-  if (mode === '实时计费') income = distance <= 5 ? 25 : 25 + (distance - 5) * 8;
-  else if (mode === '一口价' || mode === '取送车') income = distance <= 5 ? 20 : 20 + (distance - 5) * 6;
-  else if (mode.indexOf('包时') === 0 || mode.indexOf('万能司机') === 0 || mode.indexOf('代泊车') === 0) income = Math.floor(distance * 1.5);
-  return {distance, income};
-}
-
-function buildCategoryHTML(groups, color) {
-  let h = '';
-  for (let cat in groups) {
-    h += '<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;"><span>' + cat + '</span><span style="color:' + color + ';">' + (color === 'var(--success)' ? '+' : '-') + groups[cat] + '</span></div>';
-  }
-  return h;
-}
-
 function advanceTime(minutes) {
   let oldDay = getGameDayIndex();
   let oldYear = getGameDate().year;
@@ -957,7 +846,14 @@ function advanceTime(minutes) {
   // 自然日切换时重置在线时长
   if (newDay !== oldDay) {
     G._todaySleepMinutes = 0;
-    resetAllListening();
+    for (let pk of ['DD','GD','E']) {
+      G.platforms[pk].onlineMinutesToday = 0;
+      if (G.platforms[pk].listening) {
+        G.platforms[pk].listening = false;
+        G.platforms[pk]._listenStartGameMinutes = null;
+        stopDispatchTimer(pk);
+      }
+    }
     G._bankOrdersToday = 0;
     // 每日天气（季节感知）
     let m = newDate.month;
@@ -970,7 +866,7 @@ function advanceTime(minutes) {
       weathers = ['晴天', '晴天', '多云', '多云', '下雨', '下雨', '下雪', '下雪'];
     }
     G.weather = weathers[randInt(0, weathers.length - 1)];
-    let weatherIcon = getWeatherIcon();
+    let weatherIcon = G.weather === '晴天' ? '☀️' : G.weather === '多云' ? '⛅' : G.weather === '下雨' ? '🌧️' : '❄️';
     addLog(weatherIcon + ' 今日天气：' + G.weather, 'info');
     
     // 理财每日处理
@@ -1128,7 +1024,14 @@ function advanceTime(minutes) {
       G._todaySleepMinutes = todaySleep + minutesToMidnight;
       G.time += minutesToMidnight;
       // 强制休息跨日，重置平台听单时长
-      resetAllListening();
+      for (let pk of ['DD','GD','E']) {
+        G.platforms[pk].onlineMinutesToday = 0;
+        if (G.platforms[pk].listening) {
+          G.platforms[pk].listening = false;
+          G.platforms[pk]._listenStartGameMinutes = null;
+          stopDispatchTimer(pk);
+        }
+      }
       addLog('😴 扛不住了，强制休息到次日', 'info');
       showModal('强制休息', '<p>😴 扛不住了，我得睡会儿</p><p style="font-size:13px;">今日睡眠不足5小时，已强制休息至次日</p>', [{text:'确定', cls:'btn-primary', action: function(){ closeModal(); updateStatusBar(); renderMainMenu(); saveGame(); }}]);
       return;
@@ -1166,6 +1069,74 @@ function checkMoneyNegative() {
 // ================================================================
 // ===================== 月度/周度处理 =============================
 // ================================================================
+
+function processMonthly() {
+  let mi = getGameMonthIndex();
+  if (mi === G.lastMonthlyProcess) return;
+  G.lastMonthlyProcess = mi;
+
+  let d = getGameDate();
+  addLog('📅 新月份开始：' + d.year + '年' + d.month + '月', 'info');
+
+  // 房租已移至每月最后一天支付
+
+  // 平台降价/补贴
+  if (Math.random() < 0.2) {
+    G.priceAdjust -= 1;
+    addLog('📉 平台降价，单价-1', 'warn');
+  }
+  if (Math.random() < 0.1) {
+    G.priceAdjust += 1;
+    addLog('📈 平台补贴，单价+1', 'good');
+  }
+
+  // 每月报单任务
+  for (let pk of ['DD','GD','E']) {
+    let p = G.platforms[pk];
+    if (!p.joined || p.kickedOutMonth >= 0) continue;
+    p.monthlyTarget = randInt(1, 30);
+    p.monthlyOrders = 0;
+    addLog('📋 ' + pk + '平台本月报单任务：' + p.monthlyTarget + '单', 'info');
+  }
+
+  // 个税（考虑房租/房贷抵扣）
+  if (G.monthlyIncome > 5000) {
+    let deduction = 0;
+    if (G.family.hasMortgage && G.family.mortgageMonthsLeft > 0) {
+      deduction = G.family.mortgageMonthly;
+    } else {
+      deduction = 3000; // 房租
+    }
+    let taxableIncome = G.monthlyIncome - 5000 - deduction;
+    if (taxableIncome < 0) taxableIncome = 0;
+    let tax = Math.floor(taxableIncome * 0.1);
+    G.player.money -= tax;
+    G.taxPaid += tax;
+    G.totalExpense += tax;
+    addExpenseRecord('个税', tax);
+    addLog('💰 缴纳个税 -' + tax + '元', 'bad');
+  }
+  G.monthlyIncome = 0;
+  // 重置月度称号统计
+  G._monthPlatformOrders = 0;
+  G._monthOfflineOrders = 0;
+  G._monthLuxuryOrders = 0;
+  G._monthDamageCost = 0;
+  G._monthBossIncome = 0;
+  G._monthPenaltyCount = 0;
+
+  // 检查月度任务完成
+  for (let pk of ['DD','GD','E']) {
+    let p = G.platforms[pk];
+    if (!p.joined) continue;
+      // (在下一个月份开始时检查上个月的)
+  }
+  // 上个月的任务检查在月初做
+  // 我们需要在下个月初检查上月的完成情况
+  // 由于这是月初触发的，我们检查的是"上个月"的数据
+  // 但数据已被重置，所以我们需要在重置前检查
+  // 修正：先检查再重置
+}
 
 // 重写月度处理，修正顺序
 function processMonthly_v2() {
@@ -1959,7 +1930,7 @@ function renderMainMenu() {
   html += '<div class="info-section-body">';
   html += '<span>📅 ' + d.year + '年' + d.month + '月' + d.day + '日</span>';
   html += '<span>🕐 ' + formatTime(t.h, t.min) + '</span>';
-  let weatherIcon = getWeatherIcon();
+  let weatherIcon = G.weather === '晴天' ? '☀️' : G.weather === '多云' ? '⛅' : G.weather === '下雨' ? '🌧️' : G.weather === '下雪' ? '❄️' : '🌤️';
   html += '<span>📍 ' + G.player.city + '-' + (G.currentLocation || G.player.city) + '</span>';
   html += '<span>' + weatherIcon + ' ' + (G.weather || '晴天') + '</span>';
   html += '</div></div>';
@@ -2414,9 +2385,13 @@ function startOfflineFulfillment(npc, location) {
   window._offlineEndLocation = endLocation;
 
   // 根据入职年限调整收入
-  let range = getIncomeRange();
+  let years = getElapsedYears();
+  let targetMin, targetMax;
+  if (years < 1) { targetMin = 60; targetMax = 80; }
+  else if (years < 2) { targetMin = 70; targetMax = 100; }
+  else { targetMin = 80; targetMax = 130; }
 
-  let income = randInt(range.min, range.max);
+  let income = randInt(targetMin, targetMax);
   let distance = Math.max(3, Math.round((income - 30) / 9 + 5));
 
   // 恶劣天气乘客红包
@@ -2427,7 +2402,24 @@ function startOfflineFulfillment(npc, location) {
   }
 
   // 恶劣天气受伤检查
-  if (checkWeatherInjury()) return;
+  if ((G.weather === '下雨' || G.weather === '下雪') && chance(5) && !G.injured) {
+    G.injured = true;
+    G.injuredUntilDay = getGameDayIndex() + 7;
+    G.player.money += 1000;
+    addLog('🏥 恶劣天气受伤！保险赔付1000元，休息7天', 'bad');
+    showModal('受伤了！', '<p style="color:var(--danger);">恶劣天气导致受伤！</p><p>保险赔付1000元</p><p>需要休息7天才能继续接单</p>', [{
+      text:'休息', cls:'btn-primary', action: function(){
+        closeModal();
+        let daysToSkip = 7;
+        advanceTime(daysToSkip * 24 * 60);
+        G.injured = false;
+        G.injuredUntilDay = -1;
+        addLog('💪 伤势恢复，可以继续接单了！', 'good');
+        updateStatusBar(); renderMainMenu(); saveGame();
+      }
+    }]);
+    return;
+  }
 
   let talk = G.player.talk;
 
@@ -2436,6 +2428,8 @@ function startOfflineFulfillment(npc, location) {
   if (talk >= 80) pricePerKm += 3;
   else if (talk >= 50) pricePerKm += 1;
 
+  let baseFee = 30;
+  let distFee = Math.max(0, distance - 5) * pricePerKm;
   let totalFee = income + G.priceAdjust;
 
   // 打赏
@@ -2615,6 +2609,11 @@ function travelToLocation(loc, walkMin, bikeMin) {
   updateStatusBar();
   renderMainMenu();
   saveGame();
+}
+
+function showHeatmap() {
+  let html = buildHeatmapHTML();
+  showModal('接单热力图 - ' + G.player.city, html, [{text:'关闭', cls:'btn-secondary', action:closeModal}]);
 }
 
 // ================================================================
@@ -3084,7 +3083,11 @@ function generateOrders(count) {
     }
 
     // 根据入职年限调整收入
-    let range = getIncomeRange();
+    let years = getElapsedYears();
+    let targetMin, targetMax;
+    if (years < 1) { targetMin = 60; targetMax = 80; }
+    else if (years < 2) { targetMin = 70; targetMax = 100; }
+    else { targetMin = 80; targetMax = 130; }
 
     // 计费模式：实时45%，一口价25%，包时7%，万能司机3%，代泊车5%，跨城5%，取送车10%
     // 取送车司机时：一口价25%中10%给取送车，非取送车司机回退为一口价
@@ -3104,17 +3107,27 @@ function generateOrders(count) {
     } else if (modeRand < 0.70) {
       // 一口价 25%（取送车司机时为15%，10%给取送车）
       mode = '一口价';
-      distance = randomDistance65_28_5_2();
+      let distRand = Math.random();
+      if (distRand < 0.65) distance = randInt(1, 20);
+      else if (distRand < 0.93) distance = randInt(20, 40);
+      else if (distRand < 0.98) distance = randInt(40, 60);
+      else distance = randInt(60, 100);
       income = distance <= 5 ? 20 : 20 + (distance - 5) * 6;
     } else if (modeRand < 0.77) {
       // 包时 7%
-      hours = randomBaoShiHours();
+      let baoShiRand = Math.random();
+      if (baoShiRand < 0.85) hours = randInt(1, 24) / 2;
+      else if (baoShiRand < 0.98) hours = randInt(24, 48) / 2;
+      else hours = randInt(48, 96) / 2;
       mode = '包时(' + hours + 'H)';
       income = Math.floor(hours * 70);
       distance = randInt(5, 30);
     } else if (modeRand < 0.80) {
       // 万能司机 3%
-      hours = randomBaoShiHours();
+      let wnRand = Math.random();
+      if (wnRand < 0.85) hours = randInt(1, 24) / 2;
+      else if (wnRand < 0.98) hours = randInt(24, 48) / 2;
+      else hours = randInt(48, 96) / 2;
       mode = '万能司机(' + hours + 'H)';
       income = Math.floor(hours * 70);
       distance = randInt(5, 30);
@@ -3145,12 +3158,20 @@ function generateOrders(count) {
       if (G.player.isQuSongCheDriver) {
         isQuSongChe = true;
         mode = '取送车';
-        distance = randomDistance65_28_5_2();
+        let distRand = Math.random();
+        if (distRand < 0.65) distance = randInt(1, 20);
+        else if (distRand < 0.93) distance = randInt(20, 40);
+        else if (distRand < 0.98) distance = randInt(40, 60);
+        else distance = randInt(60, 100);
         income = distance <= 5 ? 25 : 25 + (distance - 5) * 7;
       } else {
         // 非取送车司机，回退为一口价
         mode = '一口价';
-        distance = randomDistance65_28_5_2();
+        let distRand = Math.random();
+        if (distRand < 0.65) distance = randInt(1, 20);
+        else if (distRand < 0.93) distance = randInt(20, 40);
+        else if (distRand < 0.98) distance = randInt(40, 60);
+        else distance = randInt(60, 100);
         income = distance <= 5 ? 20 : 20 + (distance - 5) * 6;
       }
     }
@@ -3182,9 +3203,12 @@ function generateOrders(count) {
     let platform = joinedPlatforms.length > 0 ? joinedPlatforms[randInt(0, joinedPlatforms.length - 1)] : 'DD';
 
     // 作弊器效果：每单均为100km+
-    let cheaterResult = applyCheaterEffect(crossCity, mode, distance, income);
-    distance = cheaterResult.distance;
-    income = cheaterResult.income;
+    if (G.hasCheater && !crossCity) {
+      distance = randInt(100, 200);
+      if (mode === '实时计费') income = distance <= 5 ? 25 : 25 + (distance - 5) * 8;
+      else if (mode === '一口价' || mode === '取送车') income = distance <= 5 ? 20 : 20 + (distance - 5) * 6;
+      else if (mode.indexOf('包时') === 0 || mode.indexOf('万能司机') === 0 || mode.indexOf('代泊车') === 0) income = Math.floor(distance * 1.5);
+    }
 
     orders.push({
       id: Date.now() + i,
@@ -3283,12 +3307,32 @@ function rejectOrder(idx) {
   let order = orders[idx];
   let p = G.platforms[order.platform];
   if (p && p.joined) {
-    recordRejection(order.platform);
+    p.rejectCount7++;
+    p.rejectCount30++;
+    if (p.rejectCount7 >= 10) {
+      p.serviceScore = Math.max(0, p.serviceScore - 10);
+      p.rejectCount7 = 0;
+      addLog('📉 7天拒绝10次，' + order.platform + '服务分-10', 'bad');
+    }
+    if (p.rejectCount30 >= 50) {
+      p.daijiaScore = Math.max(0, p.daijiaScore - 2);
+      p.rejectCount30 = 0;
+      addLog('📉 30天拒绝50次，' + order.platform + '代驾分-2', 'bad');
+    }
   }
   addLog('⏭️ 拒绝了一个订单', 'info');
   showOnlineOrder();
   updateStatusBar();
   renderScoreDisplay();
+}
+
+function showCurrentOrder() {
+  if (!G.currentOrder) {
+    showModal('当前订单', '<p>没有进行中的订单</p>',
+      [{text:'确定', cls:'btn-primary', action:closeModal}]);
+    return;
+  }
+  goServeOrder();
 }
 
 function goServeOrder() {
@@ -3314,7 +3358,10 @@ function goServeOrder() {
   }}, {text:'取消订单', cls:'btn-danger', action: function(){
     closeModal();
     let p = G.platforms[G.currentOrder.platform];
-    recordRejection(G.currentOrder.platform);
+    p.rejectCount7++;
+    p.rejectCount30++;
+    if (p.rejectCount7 >= 10) { p.serviceScore = Math.max(0, p.serviceScore - 10); p.rejectCount7 = 0; }
+    if (p.rejectCount30 >= 50) { p.daijiaScore = Math.max(0, p.daijiaScore - 2); p.rejectCount30 = 0; }
     addLog('🚫 取消了' + G.currentOrder.platform + '订单', 'bad');
     G.currentOrder = null;
     p.hasOrder = false;
@@ -3421,7 +3468,11 @@ function dispatchSingleOrder(pk) {
   }
 
   // 根据入职年限调整收入
-  let range = getIncomeRange();
+  let years = getElapsedYears();
+  let targetMin, targetMax;
+  if (years < 1) { targetMin = 60; targetMax = 80; }
+  else if (years < 2) { targetMin = 70; targetMax = 100; }
+  else { targetMin = 80; targetMax = 130; }
 
   // 计费模式：一口价47%，实时25%，包时5%，万能司机5%，代泊车5%，跨城3%，取送车10%
   let modeRand = Math.random();
@@ -3431,22 +3482,28 @@ function dispatchSingleOrder(pk) {
   if (modeRand < 0.47) {
     // 一口价 47%
     mode = '一口价';
-    income = randInt(range.min, range.max);
+    income = randInt(targetMin, targetMax);
     distance = Math.max(3, Math.round((income - 20) / 6 + 5));
   } else if (modeRand < 0.72) {
     // 实时计费 25%
     mode = '实时计费';
-    income = randInt(range.min, range.max);
+    income = randInt(targetMin, targetMax);
     distance = Math.max(3, Math.round(income / 8));
   } else if (modeRand < 0.77) {
     // 包时 5%
-    hours = randomBaoShiHours();
+    let baoShiRand = Math.random();
+    if (baoShiRand < 0.85) hours = randInt(1, 24) / 2;
+    else if (baoShiRand < 0.98) hours = randInt(24, 48) / 2;
+    else hours = randInt(48, 96) / 2;
     mode = '包时(' + hours + 'H)';
     income = Math.floor(hours * 70);
     distance = randInt(5, 30);
   } else if (modeRand < 0.82) {
     // 万能司机 5%
-    hours = randomBaoShiHours();
+    let wnRand = Math.random();
+    if (wnRand < 0.85) hours = randInt(1, 24) / 2;
+    else if (wnRand < 0.98) hours = randInt(24, 48) / 2;
+    else hours = randInt(48, 96) / 2;
     mode = '万能司机(' + hours + 'H)';
     income = Math.floor(hours * 70);
     distance = randInt(5, 30);
@@ -3467,12 +3524,16 @@ function dispatchSingleOrder(pk) {
     if (G.player.isQuSongCheDriver) {
       isQuSongChe = true;
       mode = '取送车';
-      distance = randomDistance65_28_5_2();
+      let distRand = Math.random();
+      if (distRand < 0.65) distance = randInt(1, 20);
+      else if (distRand < 0.93) distance = randInt(20, 40);
+      else if (distRand < 0.98) distance = randInt(40, 60);
+      else distance = randInt(60, 100);
       income = distance <= 5 ? 25 : 25 + (distance - 5) * 7;
     } else {
       // 非取送车司机，回退为一口价
       mode = '一口价';
-      income = randInt(range.min, range.max);
+      income = randInt(targetMin, targetMax);
       distance = Math.max(3, Math.round((income - 20) / 6 + 5));
     }
   }
@@ -3504,9 +3565,12 @@ function dispatchSingleOrder(pk) {
   }
 
   // 作弊器效果
-  let cheaterResult = applyCheaterEffect(crossCity, mode, distance, income);
-  distance = cheaterResult.distance;
-  income = cheaterResult.income;
+  if (G.hasCheater && !crossCity) {
+    distance = randInt(100, 200);
+    if (mode === '实时计费') income = distance <= 5 ? 25 : 25 + (distance - 5) * 8;
+    else if (mode === '一口价' || mode === '取送车') income = distance <= 5 ? 20 : 20 + (distance - 5) * 6;
+    else if (mode.indexOf('包时') === 0 || mode.indexOf('万能司机') === 0 || mode.indexOf('代泊车') === 0) income = Math.floor(distance * 1.5);
+  }
 
   // 优质订单判断：距离>50km或收入>400元
   if (distance > 50 || income > 400) isPremium = true;
@@ -3579,7 +3643,11 @@ function showMultiDispatchNotification(orders) {
     {text:'全部取消', cls:'btn-danger', action: function(){
       let ords = window._multiDispatchOrders;
       ords.forEach(o => {
-        recordRejection(o.platform);
+        let p = G.platforms[o.platform];
+        p.rejectCount7++;
+        p.rejectCount30++;
+        if (p.rejectCount7 >= 10) { p.serviceScore = Math.max(0, p.serviceScore - 10); p.rejectCount7 = 0; }
+        if (p.rejectCount30 >= 50) { p.daijiaScore = Math.max(0, p.daijiaScore - 2); p.rejectCount30 = 0; }
         addLog('⏭️ 取消了' + o.platform + '派单', 'info');
       });
       closeModal();
@@ -3595,8 +3663,12 @@ function acceptMultiDispatch(idx) {
   // 取消其他订单
   orders.forEach((o, i) => {
     if (i !== idx) {
-        recordRejection(o.platform);
-        addLog('⏭️ 取消了' + o.platform + '派单', 'info');
+      let p = G.platforms[o.platform];
+      p.rejectCount7++;
+      p.rejectCount30++;
+      if (p.rejectCount7 >= 10) { p.serviceScore = Math.max(0, p.serviceScore - 10); p.rejectCount7 = 0; }
+      if (p.rejectCount30 >= 50) { p.daijiaScore = Math.max(0, p.daijiaScore - 2); p.rejectCount30 = 0; }
+      addLog('⏭️ 取消了' + o.platform + '派单', 'info');
     }
   });
 
@@ -3605,6 +3677,11 @@ function acceptMultiDispatch(idx) {
   addLog('✅ 接到' + accepted.platform + '派单！' + accepted.start + '→' + accepted.end, 'good');
   closeModal();
   updateStatusBar(); renderMainMenu(); saveGame();
+}
+
+function processDispatch() {
+  // 派单已改为真实秒数定时器驱动，此函数保留但不再由gameLoop调用
+  // 仅在需要时手动触发
 }
 
 function showDispatchNotification(order) {
@@ -3632,7 +3709,11 @@ function showDispatchNotification(order) {
       window._dispatchTimer = null;
       let o = window._dispatchOrder;
       if (o && !G.currentOrder) {
-        recordRejection(o.platform);
+        let p = G.platforms[o.platform];
+        p.rejectCount7++;
+        p.rejectCount30++;
+        if (p.rejectCount7 >= 10) { p.serviceScore = Math.max(0, p.serviceScore - 10); p.rejectCount7 = 0; }
+        if (p.rejectCount30 >= 50) { p.daijiaScore = Math.max(0, p.daijiaScore - 2); p.rejectCount30 = 0; }
         addLog('⏭️ 派单超时，自动取消' + o.platform + '订单', 'info');
       }
       closeModal();
@@ -3657,7 +3738,18 @@ function showDispatchNotification(order) {
       window._dispatchTimer = null;
       let o = window._dispatchOrder;
       let p = G.platforms[o.platform];
-      recordRejection(o.platform);
+      p.rejectCount7++;
+      p.rejectCount30++;
+      if (p.rejectCount7 >= 10) {
+        p.serviceScore = Math.max(0, p.serviceScore - 10);
+        p.rejectCount7 = 0;
+        addLog('📉 7天拒绝10次，服务分-10', 'bad');
+      }
+      if (p.rejectCount30 >= 50) {
+        p.daijiaScore = Math.max(0, p.daijiaScore - 2);
+        p.rejectCount30 = 0;
+        addLog('📉 30天拒绝50次，代驾分-2', 'bad');
+      }
       addLog('⏭️ 拒绝了' + o.platform + '派单', 'info');
       closeModal();
       updateStatusBar();
@@ -3691,7 +3783,36 @@ function startFulfillment(order) {
           addLog('🛡️ 保上保生效！代泊车车损免赔，服务分-5', 'good');
         } else {
           // 无保上保，私了/理赔选择
-          showAccidentDialog(damage, order.platform, '代泊车中发生事故', order);
+          let hasPlatform = order.platform && G.platforms[order.platform] && G.platforms[order.platform].joined;
+          let html2 = '<p style="color:var(--danger);">代泊车中发生事故，赔偿金额：' + damage + '元</p>';
+          html2 += '<p style="font-size:13px;margin-top:8px;">请选择处理方式：</p>';
+          html2 += '<p style="font-size:12px;color:var(--text-secondary);">① 私了：承担全部' + damage + '元，平台不扣分</p>';
+          if (hasPlatform) {
+            html2 += '<p style="font-size:12px;color:var(--text-secondary);">② 平台理赔：最多承担1500元，' + order.platform + '扣6代驾分+10服务分</p>';
+          }
+          let buttons2 = [
+            {text:'私了（' + damage + '元）', cls:'btn-warning', action: function(){
+              closeModal();
+              G.player.money -= damage; G.totalExpense += damage;
+              addExpenseRecord('车损赔偿', damage);
+              addLog('💥 代泊车事故私了，赔偿' + damage + '元', 'bad');
+              startDriving(order);
+            }}
+          ];
+          if (hasPlatform) {
+            buttons2.push({text:'平台理赔（最多1500元）', cls:'btn-danger', action: function(){
+              closeModal();
+              let userDamage = Math.min(damage, 1500);
+              G.player.money -= userDamage; G.totalExpense += userDamage;
+              addExpenseRecord('车损赔偿', userDamage);
+              let p2 = G.platforms[order.platform];
+              p2.daijiaScore = Math.max(0, p2.daijiaScore - 6);
+              p2.serviceScore = Math.max(0, p2.serviceScore - 10);
+              addLog('💥 代泊车事故理赔，赔偿' + userDamage + '元，代驾分-6，服务分-10', 'bad');
+              if (p2.daijiaScore <= 0) { handleDaijiaScoreZero(order.platform); } else { startDriving(order); }
+            }});
+          }
+          showModal('事故处理', html2, buttons2);
           return;
         }
       }
@@ -3701,7 +3822,25 @@ function startFulfillment(order) {
   }
 
   // 恶劣天气受伤检查
-  if (checkWeatherInjury()) return;
+  if ((G.weather === '下雨' || G.weather === '下雪') && chance(5) && !G.injured) {
+    G.injured = true;
+    G.injuredUntilDay = getGameDayIndex() + 7; // 7天后恢复
+    G.player.money += 1000; // 保险赔付
+    addLog('🏥 恶劣天气受伤！保险赔付1000元，休息7天', 'bad');
+    showModal('受伤了！', '<p style="color:var(--danger);">恶劣天气导致受伤！</p><p>保险赔付1000元</p><p>需要休息7天才能继续接单</p>', [{
+      text:'休息', cls:'btn-primary', action: function(){
+        closeModal();
+        // 直接跳到第8天
+        let daysToSkip = 7;
+        advanceTime(daysToSkip * 24 * 60);
+        G.injured = false;
+        G.injuredUntilDay = -1;
+        addLog('💪 伤势恢复，可以继续接单了！', 'good');
+        updateStatusBar(); renderMainMenu(); saveGame();
+      }
+    }]);
+    return;
+  }
 
   // 取回代步车
   if (G.hasBike && !G.bikeAvailable) {
@@ -3781,7 +3920,10 @@ function startFulfillment(order) {
         closeModal();
         // 取消订单逻辑
         let p2 = G.platforms[order.platform];
-        recordRejection(order.platform);
+        p2.rejectCount7++;
+        p2.rejectCount30++;
+        if (p2.rejectCount7 >= 10) { p2.serviceScore = Math.max(0, p2.serviceScore - 10); p2.rejectCount7 = 0; }
+        if (p2.rejectCount30 >= 50) { p2.daijiaScore = Math.max(0, p2.daijiaScore - 2); p2.rejectCount30 = 0; }
         G.currentOrder = null;
         p2.hasOrder = false;
         addLog('🚫 因代步车问题取消订单', 'bad');
@@ -4061,7 +4203,8 @@ function checkVehicleAndDrive(order) {
               closeModal();
               G.currentOrder = null;
               G.platforms[order.platform].hasOrder = false;
-              recordRejection(order.platform);
+              G.platforms[order.platform].rejectCount7++;
+              G.platforms[order.platform].rejectCount30++;
               addLog('❌ 取消豪车订单（有责）', 'bad');
               updateStatusBar(); renderMainMenu(); saveGame();
             }},
@@ -4320,7 +4463,8 @@ function completeOnlineOrder(order) {
 
   // 10%概率差评
   if (chance(10)) {
-    p.serviceScore = Math.max(0, p.serviceScore - 1);
+    let p2 = G.platforms[order.platform];
+    p2.serviceScore = Math.max(0, p2.serviceScore - 1);
     addLog('⭐ 收到差评，' + order.platform + '服务分-1', 'bad');
   }
 
@@ -4478,7 +4622,14 @@ function completeOnlineOrder(order) {
       G._todaySleepMinutes = todaySleep + actualSleep;
       G.time += actualSleep;
       // 补觉跨日，重置平台听单时长
-      resetAllListening();
+      for (let pk of ['DD','GD','E']) {
+        G.platforms[pk].onlineMinutesToday = 0;
+        if (G.platforms[pk].listening) {
+          G.platforms[pk].listening = false;
+          G.platforms[pk]._listenStartGameMinutes = null;
+          stopDispatchTimer(pk);
+        }
+      }
       addLog('😴 订单结束后扛不住了，强制休息到次日', 'info');
       showModal('强制休息', '<p>😴 扛不住了，我得睡会儿</p><p style="font-size:13px;">今日睡眠不足5小时，已强制休息至次日</p>', [{text:'确定', cls:'btn-primary', action: function(){ closeModal(); updateStatusBar(); renderMainMenu(); saveGame(); }}]);
     }
@@ -4809,6 +4960,30 @@ function buyItem(id) {
   saveGame();
 }
 
+function eatFood() {
+  let html = '<p>选择吃什么：</p>';
+  showModal('吃饭', html, [
+    {text:'普通吃饭（100元）', cls:'btn-secondary', action: function(){
+      G.player.money -= 100; G.totalExpense += 100;
+      advanceTime(30);
+      addLog('🍜 吃饭 -100元', 'info');
+      closeModal(); updateStatusBar(); renderMainMenu(); saveGame();
+    }},
+    {text:'吃点好的（200元）', cls:'btn-warning', action: function(){
+      G.player.money -= 200; G.totalExpense += 200;
+      advanceTime(60);
+      addLog('🍲 吃点好的 -200元', 'info');
+      closeModal();
+      if (chance(15)) {
+        addLog('🎉 吃饭时遇到潜在客户！', 'good');
+        setTimeout(startOfflineOrder, 300);
+      }
+      updateStatusBar(); renderMainMenu(); saveGame();
+    }},
+    {text:'取消', cls:'btn-secondary', action:closeModal}
+  ]);
+}
+
 // ================================================================
 // ===================== 包工头系统 ================================
 // ================================================================
@@ -4831,9 +5006,9 @@ function showBossIntro() {
   ]);
 }
 
-function generateDriverCandidates() {
+function generateDriverCandidates(forceRefresh) {
   let currentMonthKey = 'driverCandidates_' + getGameMonthIndex();
-  if (G[currentMonthKey]) {
+  if (!forceRefresh && G[currentMonthKey]) {
     G.driverCandidates = G[currentMonthKey];
     return;
   }
@@ -5006,7 +5181,7 @@ function changeDriverBatch() {
   if (G.player.money < 15000) { showModal('余额不足', '<p>需要15000元</p>', [{text:'确定',cls:'btn-primary',action:closeModal}]); return; }
   G.player.money -= 15000; G.totalExpense += 15000;
   addExpenseRecord('购物', 15000);
-  generateDriverCandidates();
+  generateDriverCandidates(true);
   addLog('👔 换一批司机候选人，花费15000元', 'info');
   updateStatusBar(); showBossManage(); saveGame();
 }
@@ -5488,6 +5663,14 @@ function showMonthlyReport() {
   let totalInc = incomes.reduce((s, r) => s + r.amount, 0);
   let net = totalInc - totalExp;
 
+  function buildCategoryHTML(groups, color) {
+    let h = '';
+    for (let cat in groups) {
+      h += '<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;"><span>' + cat + '</span><span style="color:' + color + ';">' + (color === 'var(--success)' ? '+' : '-') + groups[cat] + '</span></div>';
+    }
+    return h;
+  }
+
   let html = '<div style="text-align:center;margin-bottom:14px;">';
   html += '<h4 style="margin:0;">📊 ' + prevYear + '年' + prevMonth + '月 收支流水</h4></div>';
 
@@ -5894,18 +6077,26 @@ function showIncomeExpenseDetail() {
   let totalExp = expenses.reduce((s, r) => s + r.amount, 0);
   let totalInc = incomes.reduce((s, r) => s + r.amount, 0);
 
+  function buildCatHTML(groups, color) {
+    let h = '';
+    for (let cat in groups) {
+      h += '<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;"><span>' + cat + '</span><span style="color:' + color + ';">' + (color === 'var(--success)' ? '+' : '-') + groups[cat] + '</span></div>';
+    }
+    return h;
+  }
+
   let html = '<h4 style="margin-bottom:10px;">📊 ' + d.year + '年' + d.month + '月 收支明细</h4>';
 
   html += '<p style="color:var(--success);font-weight:bold;margin-bottom:4px;">收入（+' + totalInc + '元）</p>';
   html += '<div style="background:#1e1e1e;border-radius:4px;padding:8px 10px;margin-bottom:10px;">';
   if (Object.keys(incGroups).length === 0) { html += '<p style="font-size:12px;color:var(--text-secondary);">暂无</p>'; }
-  else { html += buildCategoryHTML(incGroups, 'var(--success)'); }
+  else { html += buildCatHTML(incGroups, 'var(--success)'); }
   html += '</div>';
 
   html += '<p style="color:var(--danger);font-weight:bold;margin-bottom:4px;">支出（-' + totalExp + '元）</p>';
   html += '<div style="background:#1e1e1e;border-radius:4px;padding:8px 10px;margin-bottom:10px;">';
   if (Object.keys(expGroups).length === 0) { html += '<p style="font-size:12px;color:var(--text-secondary);">暂无</p>'; }
-  else { html += buildCategoryHTML(expGroups, 'var(--danger)'); }
+  else { html += buildCatHTML(expGroups, 'var(--danger)'); }
   html += '</div>';
 
   let net = totalInc - totalExp;
