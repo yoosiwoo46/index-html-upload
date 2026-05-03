@@ -774,6 +774,8 @@ function newGameState() {
       skipped: false, // 是否跳过新手期
       seen: {} // 已看过的引导ID集合
     },
+    _missedOrdersNoHeatmap: 0, // 热力图失效期间错过的派单数
+    _lastMissedOrderRealTime: 0, // 上次错过派单的现实时间戳
   };
 }
 
@@ -2728,6 +2730,18 @@ function showHeatmap() {
 // ===================== 线上接单系统 ==============================
 // ================================================================
 
+function isHeatmapActive() {
+  for (let pk of ['DD','GD','E']) {
+    let p = G.platforms[pk];
+    if (!p || !p.joined) continue;
+    let monthsSinceJoin = getGameMonthIndex() - (p.joinMonth || 0);
+    if (monthsSinceJoin < 1) return true;
+    if (G[pk + '_heatmapPaidUntil'] && getGameMonthIndex() <= G[pk + '_heatmapPaidUntil']) return true;
+    if (G[pk + '_heatmapFreeMonth'] && getGameMonthIndex() <= G[pk + '_heatmapFreeMonth']) return true;
+  }
+  return false;
+}
+
 function buyHeatmapAccess() {
   if (G.player.money < 500) { showModal('余额不足', '<p>需要500元</p>', [{text:'确定',cls:'btn-primary',action:closeModal}]); return; }
   G.player.money -= 500; G.totalExpense += 500;
@@ -3030,6 +3044,44 @@ function showOnlineOrder() {
     html += '<p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">🔒 新人期已过，需付费解锁</p>';
     html += '<button class="btn-warning btn-small" onclick="buyHeatmapAccess()">购买热力图（500元/30天）</button>';
   }
+
+  // 营销活动提示（按优先级从高到低）
+  let dayIdx = getGameDayIndex();
+  let hasHeatmap = heatmapUnlocked;
+  let hasYouzhi = false, hasMianYong = false, hasBaoShangBao = false;
+  for (let pk of ['DD','GD','E']) {
+    let p = G.platforms[pk];
+    if (!p || !p.joined || p.kickedOutMonth >= 0) continue;
+    if (G[pk + '_youzhiOrder'] && dayIdx <= G[pk + '_youzhiOrder'].expireDay) hasYouzhi = true;
+    if (G[pk + '_mianYong'] && dayIdx <= G[pk + '_mianYong']) hasMianYong = true;
+    if (G[pk + '_baoShangBao'] && dayIdx <= G[pk + '_baoShangBao']) hasBaoShangBao = true;
+  }
+  let promoHTML = '';
+  if (!hasHeatmap) {
+    let missed = randInt(3, 10);
+    promoHTML = '<div style="margin-top:10px;padding:8px 12px;background:#2a1a1a;border:1px solid var(--danger);border-radius:6px;">' +
+      '<p style="font-size:13px;color:var(--danger);">⚠️ 过去十分钟内您因未开热力图错过 <b>' + missed + '</b> 单</p>' +
+      '<p style="font-size:11px;color:var(--text-secondary);margin-top:4px;">推荐解锁热力图接到更多订单</p></div>';
+  } else if (!hasYouzhi) {
+    let missed = randInt(3, 10);
+    promoHTML = '<div style="margin-top:10px;padding:8px 12px;background:#1a2a1a;border:1px solid var(--gold);border-radius:6px;">' +
+      '<p style="font-size:13px;color:var(--gold);">💡 过去十分钟内您因未解锁权益错过 <b>' + missed + '</b> 单</p>' +
+      '<p style="font-size:11px;color:var(--text-secondary);margin-top:4px;">推荐您解锁优质订单优先享接到更多订单</p></div>';
+  } else if (!hasMianYong) {
+    let lostIncome = randInt(200, 800);
+    promoHTML = '<div style="margin-top:10px;padding:8px 12px;background:#1a2a1a;border:1px solid var(--gold);border-radius:6px;">' +
+      '<p style="font-size:13px;color:var(--gold);">💰 过去一周您因未解锁权益少收入 <b>' + lostIncome + '</b> 元</p>' +
+      '<p style="font-size:11px;color:var(--text-secondary);margin-top:4px;">推荐您解锁超值免佣包获得更多收入</p></div>';
+  } else if (!hasBaoShangBao) {
+    promoHTML = '<div style="margin-top:10px;padding:8px 12px;background:#1a1a2a;border:1px solid #60a5fa;border-radius:6px;">' +
+      '<p style="font-size:13px;color:#60a5fa;">🛡️ 推荐您解锁出险保上保权益</p>' +
+      '<p style="font-size:11px;color:var(--text-secondary);margin-top:4px;">双重保障，接单无忧</p></div>';
+  } else {
+    promoHTML = '<div style="margin-top:10px;padding:8px 12px;background:#1a2a1a;border:1px solid var(--success);border-radius:6px;">' +
+      '<p style="font-size:13px;color:var(--success);">🌟 今日宜做单</p></div>';
+  }
+  html += promoHTML;
+
   html += '<hr style="border-color:var(--border);margin:16px 0;">';
 
   // 抢单大厅
@@ -3705,6 +3757,12 @@ function dispatchSingleOrder(pk) {
     yp.count--;
   }
 
+  // 热力图失效时累计错过订单数
+  if (!isHeatmapActive()) {
+    G._missedOrdersNoHeatmap = (G._missedOrdersNoHeatmap || 0) + 1;
+    G._lastMissedOrderRealTime = Date.now();
+  }
+
   // 存入待处理队列而不是直接弹窗
   G.pendingDispatches.push(order);
 
@@ -4020,8 +4078,8 @@ function startFulfillment(order) {
   let p = G.platforms[order.platform];
   p.onlineMinutesToday += travelTime;
 
-  // 服务分+0.5
-  p.serviceScore = Math.min(100, p.serviceScore + 0.5);
+  // 服务分+0.2
+  p.serviceScore = Math.min(100, p.serviceScore + 0.2);
 
   // 代步车放置事件（有代步车时30%触发）
   if (G.hasBike && G.bikeAvailable && chance(30)) {
@@ -4098,8 +4156,8 @@ function arriveAtStart(order) {
         }},
         {text:'不引导', cls:'btn-secondary', action: function(){
           closeModal();
-          p.serviceScore = Math.min(100, p.serviceScore + 0.5);
-          addLog('👍 拒绝引导报单，服务分+0.5', 'good');
+          p.serviceScore = Math.min(100, p.serviceScore + 0.2);
+          addLog('👍 拒绝引导报单，服务分+0.2', 'good');
           checkVehicleAndDrive(order);
         }}
       ]);
@@ -4125,8 +4183,8 @@ function arriveAtStart(order) {
         }},
         {text:'拒绝', cls:'btn-secondary', action: function(){
           closeModal();
-          p.serviceScore = Math.min(100, p.serviceScore + 0.5);
-          addLog('👍 拒绝私下转账，服务分+0.5', 'good');
+          p.serviceScore = Math.min(100, p.serviceScore + 0.2);
+          addLog('👍 拒绝私下转账，服务分+0.2', 'good');
           checkVehicleAndDrive(order);
         }}
       ]);
@@ -4395,12 +4453,12 @@ function startDriving(order) {
     showModal('行驶中 - 送朋友', html, [
       {text:'引导添加途经点', cls:'btn-success', action: function(){
         closeModal();
-        p.serviceScore = Math.min(100, p.serviceScore + 0.5);
+        p.serviceScore = Math.min(100, p.serviceScore + 0.2);
         order.distance += extraDist;
         order.actualDistance = order.distance; // 实际里程=预估里程+途经点
         // 重新计算收入
         recalcOrderIncome(order);
-        addLog('👍 同意送朋友，服务分+0.5，里程+' + extraDist + 'km', 'good');
+        addLog('👍 同意送朋友，服务分+0.2，里程+' + extraDist + 'km', 'good');
         checkMoreDrivingEvents(order);
       }},
       {text:'拒绝', cls:'btn-danger', action: function(){
@@ -4436,8 +4494,8 @@ function checkMoreDrivingEvents(order) {
         G.totalExpense += cost;
         order.income += cost;
         if (chance(70)) {
-          p.serviceScore = Math.min(100, p.serviceScore + 0.5);
-          addLog('👍 帮忙' + task + '，垫付' + cost + '元，服务分+0.5', 'good');
+          p.serviceScore = Math.min(100, p.serviceScore + 0.2);
+          addLog('👍 帮忙' + task + '，垫付' + cost + '元，服务分+0.2', 'good');
         }
         finishDriving(order);
       }},
@@ -4506,8 +4564,8 @@ function finishDriving(order) {
         closeModal();
         advanceTime(10);
         if (chance(90)) {
-          p.serviceScore = Math.min(100, p.serviceScore + 0.5);
-          addLog('👍 送到指定车位，服务分+0.5', 'good');
+          p.serviceScore = Math.min(100, p.serviceScore + 0.2);
+          addLog('👍 送到指定车位，服务分+0.2', 'good');
         }
         completeOnlineOrder(order);
       }},
@@ -4635,10 +4693,10 @@ function completeOnlineOrder(order) {
       {text:'不索要', cls:'btn-secondary', action: function(){
         closeModal();
         let p = G.platforms[order.platform];
-        if (p && p.joined) p.serviceScore = Math.min(100, p.serviceScore + 0.5);
+        if (p && p.joined) p.serviceScore = Math.min(100, p.serviceScore + 0.2);
         if (Math.random() < 0.7) {
-          addLog('😊 乘客好评！服务分+0.5', 'good');
-          showModal('好评', '<p style="color:var(--success);">乘客给了好评！服务分+0.5</p>', [{text:'确定',cls:'btn-primary',action:closeModal}]);
+          addLog('😊 乘客好评！服务分+0.2', 'good');
+          showModal('好评', '<p style="color:var(--success);">乘客给了好评！服务分+0.2</p>', [{text:'确定',cls:'btn-primary',action:closeModal}]);
         } else {
           let tip = randInt(100, 500);
           G.player.money += tip; G.totalIncome += tip;
