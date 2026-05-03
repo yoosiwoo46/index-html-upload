@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>代驾司机模拟器 V1.3</title>
 <style>
-/* ========== 暗金奢华 Dark Luxury Gold ========== */
+/* ========== Dark Luxury Gold ========== */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
   --bg-primary: #1a1a1a;
@@ -1725,7 +1725,7 @@ function toActualDistance(straightDist) {
   // 道路系数：1.1~1.5，距离越远系数越大（绕路更多）
   let factor = 1.1 + (straightDist / 100) * 0.4;
   factor = Math.min(factor, 1.5);
-  return Math.max(1, Math.round(straightDist * factor));
+  return Math.min(100, Math.max(1, Math.round(straightDist * factor)));
 }
 
 function generateFemaleName() {
@@ -3896,7 +3896,7 @@ function startFulfillment(order) {
           html2 += '<p style="font-size:13px;margin-top:8px;">请选择处理方式：</p>';
           html2 += '<p style="font-size:12px;color:var(--text-secondary);">① 私了：承担全部' + damage + '元，平台不扣分</p>';
           if (hasPlatform) {
-            html2 += '<p style="font-size:12px;color:var(--text-secondary);">② 平台理赔：最多承担1500元，' + order.platform + '扣6代驾分+10服务分</p>';
+            html2 += '<p style="font-size:12px;color:var(--text-secondary);">② 平台理赔：您承担20%（最多1500元），' + order.platform + '扣6代驾分+10服务分</p>';
           }
           let buttons2 = [
             {text:'私了（' + damage + '元）', cls:'btn-warning', action: function(){
@@ -3908,9 +3908,9 @@ function startFulfillment(order) {
             }}
           ];
           if (hasPlatform) {
-            buttons2.push({text:'平台理赔（最多1500元）', cls:'btn-danger', action: function(){
+            buttons2.push({text:'平台理赔（承担20%）', cls:'btn-danger', action: function(){
               closeModal();
-              let userDamage = Math.min(damage, 1500);
+              let userDamage = Math.min(Math.ceil(damage * 0.2), 1500);
               G.player.money -= userDamage; G.totalExpense += userDamage;
               addExpenseRecord('车损赔偿', userDamage);
               let p2 = G.platforms[order.platform];
@@ -4250,7 +4250,7 @@ function checkVehicleAndDrive(order) {
             html2 += '<p style="font-size:13px;margin-top:8px;">请选择处理方式：</p>';
             html2 += '<p style="font-size:12px;color:var(--text-secondary);">① 私了：承担全部' + damage + '元，平台不扣分</p>';
             if (hasPlatform) {
-              html2 += '<p style="font-size:12px;color:var(--text-secondary);">② 平台理赔：最多承担1500元，' + order.platform + '扣6代驾分+10服务分</p>';
+              html2 += '<p style="font-size:12px;color:var(--text-secondary);">② 平台理赔：您承担20%（最多1500元），' + order.platform + '扣6代驾分+10服务分</p>';
             }
             let buttons = [
               {text:'私了（' + damage + '元）', cls:'btn-warning', action: function(){
@@ -4270,9 +4270,9 @@ function checkVehicleAndDrive(order) {
               }}
             ];
             if (hasPlatform) {
-              buttons.push({text:'平台理赔（最多1500元）', cls:'btn-danger', action: function(){
+              buttons.push({text:'平台理赔（承担20%）', cls:'btn-danger', action: function(){
                 closeModal();
-                let userDamage = Math.min(damage, 1500);
+                let userDamage = Math.min(Math.ceil(damage * 0.2), 1500);
                 G.player.money -= userDamage; G.totalExpense += userDamage;
                 G._monthDamageCost = (G._monthDamageCost || 0) + userDamage;
                 addExpenseRecord('车损赔偿', userDamage);
@@ -4333,7 +4333,7 @@ function checkVehicleAndDrive(order) {
         html2 += '<p style="font-size:13px;margin-top:8px;">请选择处理方式：</p>';
         html2 += '<p style="font-size:12px;color:var(--text-secondary);">① 私了：承担全部' + damage + '元，平台不扣分</p>';
         if (hasPlatform) {
-          html2 += '<p style="font-size:12px;color:var(--text-secondary);">② 平台理赔：最多承担1500元，' + order.platform + '扣6代驾分+10服务分</p>';
+          html2 += '<p style="font-size:12px;color:var(--text-secondary);">② 平台理赔：您承担20%（最多1500元），' + order.platform + '扣6代驾分+10服务分</p>';
         }
         let buttons2 = [
           {text:'私了（' + damage + '元）', cls:'btn-warning', action: function(){
@@ -4353,9 +4353,9 @@ function checkVehicleAndDrive(order) {
           }}
         ];
         if (hasPlatform) {
-          buttons2.push({text:'平台理赔（最多1500元）', cls:'btn-danger', action: function(){
+          buttons2.push({text:'平台理赔（承担20%）', cls:'btn-danger', action: function(){
             closeModal();
-            let userDamage = Math.min(damage, 1500);
+            let userDamage = Math.min(Math.ceil(damage * 0.2), 1500);
             G.player.money -= userDamage; G.totalExpense += userDamage;
             G._monthDamageCost = (G._monthDamageCost || 0) + userDamage;
             addExpenseRecord('车损赔偿', userDamage);
@@ -6113,7 +6113,7 @@ function doFastForward7Days(avgPlatform, avgOffline) {
         let dmgInfo = calcVehicleDamage(false, G.player.drive);
         if (dmgInfo && chance(dmgInfo.chance)) {
           let damage = randInt(dmgInfo.minDmg, dmgInfo.maxDmg);
-          let userDamage = Math.min(damage, 1500);
+          let userDamage = Math.min(Math.ceil(damage * 0.2), 1500);
           G.player.money -= userDamage; G.totalExpense += userDamage;
           totalExpense += userDamage;
           addExpenseRecord('车损赔偿', userDamage);
