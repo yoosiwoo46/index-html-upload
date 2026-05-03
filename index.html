@@ -195,6 +195,7 @@ input:focus, select:focus { border-color: var(--gold); outline: none; box-shadow
   border: 1px solid #333; cursor: pointer;
   transition: all 0.2s;
   border-left: 3px solid #d4af37;
+  position: relative;
 }
 .menu-item:hover {
   background: #2e2e2e;
@@ -207,6 +208,18 @@ input:focus, select:focus { border-color: var(--gold); outline: none; box-shadow
   margin-left: auto; background: linear-gradient(135deg, #d4af37, #b8941e);
   color: #000; padding: 2px 8px; border-radius: 10px; font-size: 11px;
   font-weight: bold;
+}
+.menu-tip {
+  position: absolute; top: -8px; right: -8px;
+  background: linear-gradient(135deg, #d4af37, #b8941e);
+  color: #000; font-size: 10px; font-weight: bold;
+  padding: 2px 6px; border-radius: 10px;
+  animation: tipPulse 2s infinite;
+  pointer-events: none; z-index: 5;
+}
+@keyframes tipPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.1); }
 }
 
 /* ========== 日志面板 ========== */
@@ -536,6 +549,7 @@ hr {
       <button class="btn-primary" onclick="createCharacter()">开始游戏</button>
     </div>
     <p style="font-size:12px;color:var(--text-secondary);margin-top:10px;" id="load-hint"></p>
+    <p style="font-size:12px;color:var(--gold);margin-top:6px;">💡 年龄和驾龄由系统随机生成，姓名和城市需手动输入</p>
   </div>
 
   <!-- 主菜单 -->
@@ -755,6 +769,11 @@ function newGameState() {
     cheaterOrderCount: 0,
     expenseDetails: [],
     incomeDetails: [],
+    // 新手引导
+    _tutorial: {
+      skipped: false, // 是否跳过新手期
+      seen: {} // 已看过的引导ID集合
+    },
   };
 }
 
@@ -1037,6 +1056,31 @@ function advanceTime(minutes) {
       return;
     }
   }
+}
+
+// ================================================================
+// ===================== 新手引导系统 ==============================
+// ================================================================
+
+function showTutorial(id, title, content) {
+  if (!G || !G._tutorial || G._tutorial.skipped) return;
+  if (G._tutorial.seen[id]) return;
+  G._tutorial.seen[id] = true;
+  saveGame();
+  let html = '<p style="font-size:14px;line-height:1.6;">' + content + '</p>';
+  html += '<div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">';
+  html += '<button class="btn-secondary btn-small" onclick="skipAllTutorial()">跳过新手期</button>';
+  html += '<button class="btn-primary btn-small" onclick="closeModal()">确定</button>';
+  html += '</div>';
+  showModal(title, html, []);
+}
+
+function skipAllTutorial() {
+  if (!G) return;
+  G._tutorial.skipped = true;
+  closeModal();
+  addLog('📖 已跳过新手引导', 'info');
+  saveGame();
 }
 
 // ================================================================
@@ -1782,6 +1826,21 @@ function selectGender(btn) {
   btn.classList.add('selected');
 }
 
+function randomizeAgeAndExp() {
+  let ageRand = Math.random();
+  let age;
+  if (ageRand < 0.6) {
+    age = randInt(20, 40);
+  } else if (ageRand < 0.9) {
+    age = randInt(40, 49);
+  } else {
+    age = randInt(50, 79);
+  }
+  let exp = randInt(1, Math.max(1, age - 18));
+  document.getElementById('inp-age').value = age;
+  document.getElementById('inp-exp').value = exp;
+}
+
 function createCharacter() {
   let name = document.getElementById('inp-name').value.trim();
   let gender = document.querySelector('.gender-btn.selected').dataset.gender;
@@ -1858,6 +1917,9 @@ function createCharacter() {
   addLog('👤 年龄' + age + '岁，驾龄' + exp + '年', 'info');
   addLog('💰 初始金钱：' + G.player.money + '元', 'good');
   addLog('📊 驾驶能力' + G.player.drive + ' | 话术能力' + G.player.talk + ' | 豪车驾驶' + G.player.luxury, 'info');
+
+  // 新手引导：初始设定页
+  G._tutorial.seen['char_create'] = true; // 标记已看过初始页
 
   showMainUI();
   saveGame();
@@ -1976,17 +2038,17 @@ function renderMainMenu() {
   // 接单相关
   let joinedCount = Object.values(G.platforms).filter(p => p.joined).length;
   let orderItems = [];
-  orderItems.push({ icon: '🏢', title: '加入平台', desc: joinedCount > 0 ? '已加入' + joinedCount + '个平台' : '选择代驾平台开始接单', badge: joinedCount > 0 ? joinedCount + '个' : null, action: 'showJoinPlatform' });
-  orderItems.push({ icon: '🚶', title: '线下报单', desc: '线下寻找需要代驾的客户', action: 'startOfflineOrder' });
+  orderItems.push({ icon: '🏢', title: '加入平台', desc: joinedCount > 0 ? '已加入' + joinedCount + '个平台' : '选择代驾平台开始接单', badge: joinedCount > 0 ? joinedCount + '个' : null, action: 'showJoinPlatform', tip: '加入代驾平台才能线上接单', tutorialId: 'join_platform' });
+  orderItems.push({ icon: '🚶', title: '线下报单', desc: '线下寻找需要代驾的客户', action: 'startOfflineOrder', tip: '去地标找客户，夜间客户多', tutorialId: 'offline_order' });
   if (joinedAny) {
     if (hasOrder) {
-      orderItems.push({ icon: '🚗', title: '去服务', desc: '前往' + (G.currentOrder.start || '') + '开始服务', badge: '进行中', action: 'goServeOrder' });
+      orderItems.push({ icon: '🚗', title: '去服务', desc: '前往' + (G.currentOrder.start || '') + '开始服务', badge: '进行中', action: 'goServeOrder', tip: '当前有进行中的订单' });
     } else {
-      orderItems.push({ icon: '📱', title: '我要接单', desc: '线上接单/抢单大厅', action: 'showOnlineOrder' });
+      orderItems.push({ icon: '📱', title: '我要接单', desc: '线上接单/抢单大厅', action: 'showOnlineOrder', tip: '开启听单或手动抢单', tutorialId: 'online_order' });
     }
   }
   if (joinedAny) {
-    orderItems.push({ icon: '📚', title: '培训中心', desc: '线上培训 / 线下培训', action: 'showTraining' });
+    orderItems.push({ icon: '📚', title: '培训中心', desc: '线上培训 / 线下培训', action: 'showTraining', tip: '培训提升服务分，线下培训每月必参加' });
   }
 
   html += '<div class="menu-section"><div class="menu-section-title">🚗 接单相关</div>';
@@ -1995,12 +2057,12 @@ function renderMainMenu() {
 
   // 经营相关
   let bizItems = [];
-  bizItems.push({ icon: '🛒', title: '商店', desc: '购买物品提升能力', action: 'showShop' });
-  bizItems.push({ icon: '💰', title: '你不理财 财不离你', desc: '银行理财 | 基金股票 | 乐透人生', action: 'showFinanceMenu' });
+  bizItems.push({ icon: '🛒', title: '商店', desc: '购买物品提升能力', action: 'showShop', tip: '买电动车和马甲提升能力', tutorialId: 'shop' });
+  bizItems.push({ icon: '💰', title: '你不理财 财不离你', desc: '银行理财 | 基金股票 | 乐透人生', action: 'showFinanceMenu', tip: '银行保本、基金有风险', tutorialId: 'finance' });
   var bossDisabled = G.isBoss || G.player.money <= 50000;
   var bossDesc = bossDisabled ? (G.isBoss ? '管理我的司机团队' : '需要资金>50000元') : '缴纳保证金招募司机';
   var bossAction = bossDisabled ? (G.isBoss ? 'showBossManage' : null) : 'showBossIntro';
-  bizItems.push({ icon: '👔', title: '包工头模式', desc: bossDesc, action: bossAction, disabled: !G.isBoss && G.player.money <= 50000 });
+  bizItems.push({ icon: '👔', title: '包工头模式', desc: bossDesc, action: bossAction, disabled: !G.isBoss && G.player.money <= 50000, tip: '招募司机为您打工抽成', tutorialId: 'boss' });
   if (G.loans && G.loans.length > 0) {
     bizItems.push({ icon: '💳', title: '我的贷款', desc: G.loans.length + '笔贷款，月供' + G.loans.reduce((s,l) => s + l.monthlyPayment, 0) + '元', action: 'showLoanManage' });
   }
@@ -2011,13 +2073,13 @@ function renderMainMenu() {
 
   // 其他
   let otherItems = [];
-  otherItems.push({ icon: '📊', title: '收支明细', desc: '查看本月收入和支出详情', action: 'showIncomeExpenseDetail' });
-  otherItems.push({ icon: '🚄', title: '高铁', desc: '购买高铁票前往其他城市（500元/张）', action: 'showTrainTicket' });
-  otherItems.push({ icon: '🛏️', title: '收工睡觉', desc: '结束今天，进入下一天', action: 'goToSleep' });
-  otherItems.push({ icon: '💾', title: '保存游戏', desc: '保存当前进度', action: 'saveGame' });
-  otherItems.push({ icon: '🔄', title: '我要重开', desc: '回到角色创建界面', action: 'restartFromMenu' });
+  otherItems.push({ icon: '📊', title: '收支明细', desc: '查看本月收入和支出详情', action: 'showIncomeExpenseDetail', tip: '查看收支分类明细', tutorialId: 'expense_detail' });
+  otherItems.push({ icon: '🚄', title: '高铁', desc: '购买高铁票前往其他城市（500元/张）', action: 'showTrainTicket', tip: '换城市接单', tutorialId: 'train' });
+  otherItems.push({ icon: '🛏️', title: '收工睡觉', desc: '结束今天，进入下一天', action: 'goToSleep', tip: '结束当天进入下一天' });
+  otherItems.push({ icon: '💾', title: '保存游戏', desc: '保存当前进度', action: 'saveGame', tip: '手动保存进度' });
+  otherItems.push({ icon: '🔄', title: '我要重开', desc: '回到角色创建界面', action: 'restartFromMenu', tip: '重新开始游戏' });
   if (getElapsedYears() >= 1) {
-    otherItems.push({ icon: '🏁', title: '结束生涯', desc: '查看生涯总结并结束游戏', action: 'confirmEndCareer' });
+    otherItems.push({ icon: '🏁', title: '结束生涯', desc: '查看生涯总结并结束游戏', action: 'confirmEndCareer', tip: '结束游戏查看总结' });
   }
 
   html += '<div class="menu-section"><div class="menu-section-title">⚙️ 其他</div>';
@@ -2028,11 +2090,51 @@ function renderMainMenu() {
 }
 
 function buildMenuItemHTML(item) {
-  return '<div class="menu-item" style="' + (item.disabled ? 'opacity:0.4;pointer-events:none;' : '') + '" ' + (item.action && !item.disabled ? 'onclick="' + item.action + '()"' : '') + '>' +
+  let showTip = item.tutorialId && G && G._tutorial && !G._tutorial.skipped && !G._tutorial.seen[item.tutorialId];
+  let tipHTML = showTip ? '<span class="menu-tip">?</span>' : '';
+  let clickHandler = '';
+  if (item.action && !item.disabled) {
+    if (item.tutorialId) {
+      clickHandler = 'onclick="handleMenuClick(\'' + item.action + '\',\'' + item.tutorialId + '\')"';
+    } else {
+      clickHandler = 'onclick="' + item.action + '()"';
+    }
+  }
+  return '<div class="menu-item" style="' + (item.disabled ? 'opacity:0.4;pointer-events:none;' : '') + '" ' + clickHandler + '>' +
     '<div class="menu-icon">' + item.icon + '</div>' +
     '<div class="menu-text"><h3>' + item.title + '</h3><p>' + item.desc + '</p></div>' +
     (item.badge ? '<span class="menu-badge">' + item.badge + '</span>' : '') +
+    tipHTML +
     '</div>';
+}
+
+function handleMenuClick(action, tutorialId) {
+  if (G && G._tutorial && !G._tutorial.skipped && tutorialId && !G._tutorial.seen[tutorialId]) {
+    let tips = {
+      'join_platform': { title: '📖 加入平台', content: '选择DD/GD/E平台加入后，可开启听单接单。不同平台装备费和派单速度不同。' },
+      'offline_order': { title: '📖 线下报单', content: '选择地标前往，到达后可能遇到客户。夜间客户更多，话术影响报价和成功率。' },
+      'online_order': { title: '📖 我要接单', content: '开启<b>听单</b>后系统自动派单；也可在抢单大厅<b>手动抢单</b>。取送车需认证后才能接到。' },
+      'shop': { title: '📖 商店', content: '购买<b>电动车</b>缩短前往时间，<b>马甲</b>提升对应平台优质订单概率。' },
+      'finance': { title: '📖 理财', content: '银行理财保本保息；基金股票每日波动有赚有亏；乐透是小额彩票。' },
+      'boss': { title: '📖 包工头模式', content: '缴纳保证金招募司机，每单抽成20%。需承担保底工资和辞退赔偿。' },
+      'expense_detail': { title: '📖 收支明细', content: '查看每月收入和支出的详细分类，关注净收入趋势。' },
+      'train': { title: '📖 高铁出行', content: '购买高铁票前往其他城市，不同城市订单密度可能不同。' }
+    };
+    let tip = tips[tutorialId];
+    if (tip) {
+      G._tutorial.seen[tutorialId] = true;
+      saveGame();
+      let html = '<p style="font-size:14px;line-height:1.6;">' + tip.content + '</p>';
+      html += '<div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">';
+      html += '<button class="btn-secondary btn-small" onclick="skipAllTutorial()">跳过新手期</button>';
+      html += '<button class="btn-primary btn-small" onclick="closeModal();' + action + '()">知道了，去看看</button>';
+      html += '</div>';
+      showModal(tip.title, html, []);
+      return;
+    }
+  }
+  // 非新手或已看过，直接执行
+  window[action]();
 }
 
 // ================================================================
@@ -2217,6 +2319,12 @@ function joinPlatform(pk, preferred) {
   addLog('📢 ' + notif, 'info');
 
   closeModal();
+  // 新手引导：首次加入任意平台
+  setTimeout(function() {
+    showTutorial('after_join', '📖 开启听单',
+      '加入平台后，请前往<b>「我要接单」</b>开启听单按钮，系统会自动派单。<br>' +
+      '也可以在抢单大厅手动选择订单。');
+  }, 500);
   showJoinPlatform();
   updateStatusBar();
   renderScoreDisplay();
@@ -2391,7 +2499,7 @@ function startOfflineFulfillment(npc, location) {
   else if (years < 2) { targetMin = 70; targetMax = 100; }
   else { targetMin = 80; targetMax = 130; }
 
-  let income = randInt(targetMin, targetMax);
+  let income = Math.floor(randInt(targetMin, targetMax) * 1.2);
   let distance = Math.max(3, Math.round((income - 30) / 9 + 5));
 
   // 恶劣天气乘客红包
@@ -5825,8 +5933,13 @@ function restartGame() {
   deleteSave();
   G = null;
   document.getElementById('ending-screen').style.display = 'none';
+  document.getElementById('main-menu').style.display = 'none';
   document.getElementById('char-create').style.display = 'flex';
   document.getElementById('status-bar').style.display = 'none';
+  // 重置表单
+  document.getElementById('inp-name').value = '';
+  document.getElementById('inp-city').value = '';
+  randomizeAgeAndExp();
   if (gameTimer) { clearInterval(gameTimer); gameTimer = null; }
 }
 
