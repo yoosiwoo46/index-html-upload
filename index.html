@@ -3658,11 +3658,12 @@ function dispatchSingleOrder(pk) {
     let cities = Object.keys(CITY_LANDMARKS).filter(c => c !== 'default');
     let otherCities = cities.filter(c => c !== G.player.city);
     if (otherCities.length === 0) otherCities = cities;
-    let endCity = otherCities[randInt(0, otherCities.length - 1)];
+    endCity = otherCities[randInt(0, otherCities.length - 1)];
     let distKey1 = G.player.city + '-' + endCity;
     let distKey2 = endCity + '-' + G.player.city;
     distance = CITY_DISTANCES[distKey1] || CITY_DISTANCES[distKey2] || randInt(200, 1500);
     income = Math.floor(distance * 3 + randInt(50, 150));
+    endIdx = -1; // 跨城不使用同城地标索引
   }
 
   // 恶劣天气补贴
@@ -3687,9 +3688,10 @@ function dispatchSingleOrder(pk) {
     id: Date.now(),
     platform: pk,
     start: landmarks[startIdx],
-    end: landmarks[endIdx],
+    end: crossCity ? (endCity + '·随机地点') : landmarks[endIdx],
     distance, walkMin, bikeMin, mode, income,
     isPremium, crossCity,
+    endCity: crossCity ? endCity : undefined,
     hasRedPacket: chance((p.serviceScore > 80 || G.player.talk > 80) ? 10 : 5),
     isLuxury: chance(15),
     weatherBonus: weatherBonus
