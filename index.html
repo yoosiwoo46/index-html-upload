@@ -252,7 +252,7 @@ input:focus, select:focus { border-color: var(--gold); outline: none; box-shadow
   background: rgba(0,0,0,0.95); z-index: 200;
   display: flex; align-items: center; justify-content: center;
   padding: 16px;
-  animation: modalFadeIn 0.2s ease-out;
+  animation: none;
 }
 @keyframes modalFadeIn {
   from { opacity: 0; }
@@ -263,7 +263,7 @@ input:focus, select:focus { border-color: var(--gold); outline: none; box-shadow
   border: 1px solid var(--border); max-width: 500px; width: 100%;
   max-height: 85vh; overflow-y: auto;
   box-shadow: 0 0 30px rgba(212,175,55,0.1), inset 0 0 30px rgba(212,175,55,0.02);
-  animation: modalSlideUp 0.25s ease-out;
+  animation: none;
 }
 @keyframes modalSlideUp {
   from { opacity: 0; transform: translateY(20px); }
@@ -1812,17 +1812,15 @@ function clearLog() {
 // ===================== 模态框系统 ================================
 // ================================================================
 
-function showModal(title, bodyHTML, buttons, onClose, noCloseOnOverlay, noAnimation) {
+function showModal(title, bodyHTML, buttons, onClose, noCloseOnOverlay) {
   let mc = document.getElementById('modal-container');
-  let alreadyOpen = mc.innerHTML.trim().length > 0;
   let btnsHTML = buttons ? buttons.map((b, i) =>
     '<button class="' + (b.cls || 'btn-secondary') + '"' + (b.id ? ' id="' + b.id + '"' : '') + ' onclick="modalBtnAction(' + i + ')">' + b.text + '</button>'
   ).join('') : '<button class="btn-secondary" onclick="closeModal()">关闭</button>';
 
   let overlayClick = noCloseOnOverlay ? '' : 'onclick="event.target===this&&closeModal()"';
-  let animClass = (noAnimation || alreadyOpen) ? 'no-anim' : '';
-  mc.innerHTML = '<div class="modal-overlay ' + animClass + '" ' + overlayClick + '>' +
-    '<div class="modal ' + animClass + '">' +
+  mc.innerHTML = '<div class="modal-overlay" ' + overlayClick + '>' +
+    '<div class="modal">' +
     '<div class="modal-header"><h3>' + title + '</h3>' + (noCloseOnOverlay ? '' : '<button class="modal-close" onclick="closeModal()">&times;</button>') + '</div>' +
     '<div class="modal-body">' + bodyHTML + '</div>' +
     (buttons ? '<div class="modal-footer">' + btnsHTML + '</div>' : '') +
