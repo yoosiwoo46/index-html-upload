@@ -22,6 +22,8 @@
   --danger: #cc3333;
   --gold: #d4af37;
   --border: #333333;
+  --info-blue: #5c9bd4;
+  --info-teal: #5ba89d;
   --modal-bg: rgba(0,0,0,0.92);
   --shadow: 0 4px 20px rgba(0,0,0,0.4);
 }
@@ -67,16 +69,6 @@ input:focus, select:focus { border-color: var(--gold); outline: none; box-shadow
   0% { background-position: -200% center; }
   100% { background-position: 200% center; }
 }
-
-/* ========== 状态栏 ========== */
-#status-bar {
-  display: none;
-}
-.stat-item { display: flex; align-items: center; gap: 4px; }
-.stat-label { color: #888; }
-.stat-value { color: var(--gold); font-weight: bold; }
-.stat-value.money { color: #ffd700; }
-.stat-value.danger { color: #cc3333; }
 
 /* ========== 主容器 ========== */
 #game-container {
@@ -155,19 +147,14 @@ input:focus, select:focus { border-color: var(--gold); outline: none; box-shadow
   padding: 10px 20px; border-radius: 4px; font-size: 14px;
 }
 .btn-danger:hover { background: #dd4444; }
-.btn-small { padding: 6px 14px; font-size: 12px; }
+.btn-small { padding: 8px 16px; font-size: 12px; min-height: 36px; }
 .btn-disabled { opacity: 0.4; pointer-events: none; }
 
 /* ========== 主菜单 ========== */
 #main-menu { padding-top: 10px; }
 #main-menu h2 {
   color: var(--gold); margin-bottom: 16px; font-size: 20px;
-  background: linear-gradient(90deg, #d4af37, #f5e6a3, #d4af37, #b8941e);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: goldShimmer 4s linear infinite;
+  font-weight: bold;
 }
 .menu-grid { display: flex; flex-direction: column; gap: 10px; }
 .info-section {
@@ -202,7 +189,7 @@ input:focus, select:focus { border-color: var(--gold); outline: none; box-shadow
   border-left: 3px solid #d4af37;
 }
 .menu-icon { font-size: 28px; min-width: 40px; text-align: center; }
-.menu-text h3 { font-size: 15px; margin-bottom: 4px; color: var(--text-primary); }
+.menu-text h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; color: var(--text-primary); }
 .menu-text p { font-size: 12px; color: var(--text-secondary); }
 .menu-badge {
   margin-left: auto; background: linear-gradient(135deg, #d4af37, #b8941e);
@@ -238,9 +225,9 @@ input:focus, select:focus { border-color: var(--gold); outline: none; box-shadow
 #log-panel .log-header button { font-size: 12px; color: var(--text-secondary); background: none; border: none; }
 #log-panel .log-header button:hover { color: var(--gold); }
 #log-list {
-  max-height: 200px; overflow-y: auto; padding: 8px 14px;
+  max-height: 260px; overflow-y: auto; padding: 8px 14px;
   font-size: 12px; line-height: 1.8;
-  color: #a09080;
+  color: #c0b0a0;
 }
 #log-list::-webkit-scrollbar { width: 6px; }
 #log-list::-webkit-scrollbar-track { background: #252525; }
@@ -251,7 +238,13 @@ input:focus, select:focus { border-color: var(--gold); outline: none; box-shadow
 .log-good { color: #c5a000; }
 .log-bad { color: #cc3333; }
 .log-warn { color: #d4af37; }
-.log-info { color: #b8a080; }
+.log-info { color: #5c9bd4; }
+.log-entry.log-bad {
+  background: rgba(204,51,51,0.08);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-weight: bold;
+}
 
 /* ========== 模态框 ========== */
 .modal-overlay {
@@ -259,13 +252,24 @@ input:focus, select:focus { border-color: var(--gold); outline: none; box-shadow
   background: rgba(0,0,0,0.95); z-index: 200;
   display: flex; align-items: center; justify-content: center;
   padding: 16px;
+  animation: modalFadeIn 0.2s ease-out;
+}
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 .modal {
   background: #252525; border-radius: 4px;
   border: 1px solid var(--border); max-width: 500px; width: 100%;
   max-height: 85vh; overflow-y: auto;
   box-shadow: 0 0 30px rgba(212,175,55,0.1), inset 0 0 30px rgba(212,175,55,0.02);
+  animation: modalSlideUp 0.25s ease-out;
 }
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.no-anim { animation: none !important; }
 .modal::-webkit-scrollbar { width: 6px; }
 .modal::-webkit-scrollbar-track { background: #252525; }
 .modal::-webkit-scrollbar-thumb { background: #3a3020; border-radius: 3px; }
@@ -275,13 +279,12 @@ input:focus, select:focus { border-color: var(--gold); outline: none; box-shadow
   display: flex; justify-content: space-between; align-items: center;
 }
 .modal-header h3 {
-  font-size: 16px; color: var(--gold);
-  background: linear-gradient(90deg, #d4af37, #f5e6a3, #d4af37);
-  background-size: 200% auto;
+  font-size: 18px; color: var(--gold);
+  background: linear-gradient(90deg, #d4af37, #f5e6a3);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: goldShimmer 3s linear infinite;
+  font-weight: bold;
 }
 .modal-close {
   background: none; color: var(--text-secondary); font-size: 22px;
@@ -444,8 +447,20 @@ input:focus, select:focus { border-color: var(--gold); outline: none; box-shadow
 .score-box .score-val { font-size: 20px; font-weight: bold; margin-top: 4px; color: var(--gold); }
 
 /* ========== 响应式 ========== */
+@media (max-width: 400px) {
+  #game-container { padding: 8px 6px 12px; }
+  .modal { max-height: 92vh; }
+  .modal-body { padding: 10px 12px; }
+  .modal-footer { flex-wrap: wrap; }
+  .btn-small { min-height: 36px; padding: 8px 12px; }
+  .menu-item { padding: 12px; gap: 8px; }
+  .menu-icon { font-size: 22px; min-width: 28px; }
+  .info-section-body { gap: 4px 10px; font-size: 11px; }
+  .order-actions { flex-wrap: wrap; }
+  .score-box { padding: 8px 10px; min-width: 80px; }
+  .score-box .score-val { font-size: 16px; }
+}
 @media (max-width: 600px) {
-  #status-bar { font-size: 11px; padding: 6px 8px; gap: 4px 10px; }
   #game-container { padding: 52px 8px 16px; }
   .modal { max-height: 90vh; }
   .modal-body { padding: 12px 14px; }
@@ -459,7 +474,7 @@ input:focus, select:focus { border-color: var(--gold); outline: none; box-shadow
   #game-container { max-width: 600px; }
 }
 @media (min-width: 901px) {
-  #game-container { max-width: 500px; }
+  #game-container { max-width: 600px; }
 }
 
 /* ========== 理财系统 ========== */
@@ -481,6 +496,29 @@ input:focus, select:focus { border-color: var(--gold); outline: none; box-shadow
 .finance-status.active { background: rgba(197,160,0,0.15); color: #c5a000; }
 .finance-status.locked { background: rgba(212,175,55,0.1); color: #d4af37; }
 
+/* ========== 通用工具类 ========== */
+.text-gold { color: var(--gold); }
+.text-success { color: #4caf50; }
+.text-danger { color: var(--danger); }
+.text-warning { color: #ff9800; }
+.text-info { color: #5c9bd4; }
+.text-secondary { color: var(--text-secondary); }
+.text-bold { font-weight: bold; }
+.text-sm { font-size: 12px; }
+.text-xs { font-size: 11px; }
+.promo-card {
+  margin-top: 10px; padding: 8px 12px; border-radius: 6px;
+  background: #2a1515; border: 1px solid #cc4444;
+}
+.promo-card p:first-child { font-size: 13px; color: #ff6b6b; }
+.promo-card p:last-child { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+.info-box {
+  margin-top: 8px; padding: 8px 12px; border-radius: 6px;
+  background: #1e1e1e; border: 1px solid var(--border);
+  font-size: 13px; line-height: 1.6;
+}
+.divider { border: none; height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 12px 0; }
+
 /* ========== 全局滚动条 ========== */
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: #252525; }
@@ -494,25 +532,17 @@ hr {
   background: linear-gradient(90deg, transparent, #d4af37, transparent);
   opacity: 0.4;
 }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 </style>
 </head>
 <body>
-
-<!-- 状态栏 -->
-<div id="status-bar">
-  <div class="stat-item"><span class="stat-value" id="sb-location" style="color:var(--gold);">-</span></div>
-  <div class="stat-item"><span class="stat-label">驾驶:</span><span class="stat-value" id="sb-drive">-</span></div>
-  <div class="stat-item"><span class="stat-label">话术:</span><span class="stat-value" id="sb-talk">-</span></div>
-  <div class="stat-item"><span class="stat-label">豪车:</span><span class="stat-value" id="sb-luxury">-</span></div>
-  <div class="stat-item"><span class="stat-label">代驾分:</span><span class="stat-value" id="sb-daijia">-</span></div>
-  <div class="stat-item"><span class="stat-label">服务分:</span><span class="stat-value" id="sb-service">-</span></div>
-  <div class="stat-item"><span class="stat-label">日期:</span><span class="stat-value" id="sb-date">-</span></div>
-  <div class="stat-item"><span class="stat-label">时间:</span><span class="stat-value" id="sb-time">-</span></div>
-  <div class="stat-item"><span class="stat-label">📍</span><span class="stat-value" id="sb-location" style="color:var(--success);">-</span></div>
-  <div class="stat-item" id="sb-loan-info" style="display:none;"><span class="stat-label">贷款:</span><span class="stat-value danger" id="sb-loan">-</span></div>
-  <div class="stat-item"><span class="stat-label">征信:</span><span class="stat-value" id="sb-credit">-</span></div>
-</div>
 
 <!-- 游戏容器 -->
 <div id="version-btn" style="position:fixed;top:8px;right:12px;z-index:150;cursor:pointer;font-size:12px;color:var(--text-secondary);background:var(--bg-card);padding:2px 10px;border-radius:10px;border:1px solid var(--border);" onclick="showVersionInfo()">V1.3</div>
@@ -951,7 +981,7 @@ function advanceTime(minutes) {
       G.totalExpense += 3000;
       addExpenseRecord('房租', 3000);
       addLog('🏠 支付房租水电 -3000元', 'bad');
-      updateStatusBar();
+      
     }
     // 每月2号支付房贷
     if (newDate.day === 2 && G.family.hasMortgage && G.family.mortgageMonthsLeft > 0) {
@@ -974,10 +1004,6 @@ function advanceTime(minutes) {
           return;
         }
       }
-    }
-    // 每月1日展示上月收支流水
-    if (newDate.day === 1 && oldDay !== undefined) {
-      showMonthlyReport();
     }
   }
 
@@ -1054,7 +1080,7 @@ function advanceTime(minutes) {
         }
       }
       addLog('😴 扛不住了，强制休息到次日', 'info');
-      showModal('强制休息', '<p>😴 扛不住了，我得睡会儿</p><p style="font-size:13px;">今日睡眠不足5小时，已强制休息至次日</p>', [{text:'确定', cls:'btn-primary', action: function(){ closeModal(); updateStatusBar(); renderMainMenu(); saveGame(); }}]);
+      showModal('强制休息', '<p>😴 扛不住了，我得睡会儿</p><p style="font-size:13px;">今日睡眠不足5小时，已强制休息至次日</p>', [{text:'确定', cls:'btn-primary', action: function(){ closeModal(); renderMainMenu(); saveGame(); }}]);
       return;
     }
   }
@@ -1247,6 +1273,7 @@ function processMonthly_v2() {
   if (G.hasBike) {
     G.player.money -= 20;
     G.totalExpense += 20;
+    addExpenseRecord('代步车保养', 20);
     addLog('🔧 代步车保养 -20元', 'bad');
   }
 
@@ -1254,6 +1281,7 @@ function processMonthly_v2() {
   if (G.bikeInstallment && G.bikeInstallment.monthsLeft > 0) {
     G.player.money -= G.bikeInstallment.monthlyPayment;
     G.totalExpense += G.bikeInstallment.monthlyPayment;
+    addExpenseRecord('电动车月供', G.bikeInstallment.monthlyPayment);
     G.bikeInstallment.monthsLeft--;
     addLog('🚲 代步车分期 -' + G.bikeInstallment.monthlyPayment + '元（剩余' + G.bikeInstallment.monthsLeft + '期）', 'bad');
     if (G.bikeInstallment.monthsLeft <= 0) G.bikeInstallment = null;
@@ -1383,7 +1411,7 @@ function processMonthly_v2() {
         G.player.money -= cost; G.totalExpense += cost;
         addExpenseRecord('配偶事件', cost);
         addLog('💑 配偶事件：花费' + cost + '元', 'info');
-        closeModal(); updateStatusBar(); saveGame();
+        closeModal(); saveGame();
       }},
       {text:'拒绝', cls:'btn-danger', action: function(){
         G.family.spouseRejectCount++;
@@ -1430,6 +1458,7 @@ function processMonthly_v2() {
       if (Math.random() < 0.4) {
         let income = randInt(2000, 10000);
         G.player.money += income; G.totalIncome += income;
+        addIncomeRecord('子女孝敬', income);
         addLog('🧧 子女打来' + income + '元："爸妈，这是孝敬你们的"', 'good');
       }
     }
@@ -1490,7 +1519,7 @@ function processMonthly_v2() {
             G.player.money += income; G.monthlyIncome += income; G.totalIncome += income; G.totalOrders++;
             addIncomeRecord('线下报单', income);
             addLog('📞 回头客' + rc.name + '，收入' + income + '元', 'good');
-            closeModal(); updateStatusBar(); saveGame();
+            closeModal(); saveGame();
           }},
           {text:'拒绝', cls:'btn-secondary', action: function(){ closeModal(); saveGame(); }}
         ]);
@@ -1555,6 +1584,7 @@ function processMonthly_v2() {
         let damage = randInt(driverDmg.minDmg, driverDmg.maxDmg);
         let myShare = Math.floor(damage * 0.2);
         G.player.money -= myShare; G.totalExpense += myShare;
+        addExpenseRecord('车损赔偿', myShare);
         addLog('🔧 司机' + d.name + '车损，承担20%：-' + myShare + '元', 'bad');
         checkMoneyNegative();
       }
@@ -1601,7 +1631,7 @@ function showLoanDialog() {
       G.player.money += amount;
       G.loans.push({ amount, remaining: totalRepay, monthlyPayment, monthsLeft: months, totalMonths: months, startDate: getGameMonthIndex() });
       addLog('💳 贷款' + amount + '元，分' + months + '期，月供' + monthlyPayment + '元，征信-1（剩余' + G.credit + '）', 'warn');
-      closeModal(); updateStatusBar(); saveGame();
+      closeModal(); saveGame();
     }},
     {text:'取消', cls:'btn-secondary', action: function(){ closeModal(); }}
   ]);
@@ -1638,10 +1668,11 @@ function earlyRepayLoan(idx) {
   }
   G.player.money -= repayAmount;
   G.totalExpense += repayAmount;
+  addExpenseRecord('贷款还款', repayAmount);
   G.loans.splice(idx, 1);
   G.credit++;
   addLog('💳 提前还清贷款！还款' + repayAmount + '元，征信+1（当前' + G.credit + '）', 'good');
-  updateStatusBar(); showLoanManage(); saveGame();
+  showLoanManage(); saveGame();
 }
 
 function processWeekly() {
@@ -1678,14 +1709,14 @@ function checkMultiPlatform() {
           closeModal();
           advanceTime(24 * 60);
           addLog('📚 ' + pk + '多开首次被发现，参加线下培训1天', 'bad');
-          updateStatusBar(); renderMainMenu(); saveGame();
+          renderMainMenu(); saveGame();
         }},
         {text:'扣除分数', cls:'btn-danger', action: function(){
           closeModal();
           p.daijiaScore = Math.max(0, p.daijiaScore - 9);
           p.serviceScore = Math.max(0, p.serviceScore - 10);
           addLog('🚫 ' + pk + '多开首次被发现，代驾分-9，服务分-10', 'bad');
-          if (p.daijiaScore <= 0) { handleDaijiaScoreZero(pk); } else { updateStatusBar(); renderMainMenu(); saveGame(); }
+          if (p.daijiaScore <= 0) { handleDaijiaScoreZero(pk); } else { renderMainMenu(); saveGame(); }
         }}
       ]);
     } else {
@@ -1781,15 +1812,17 @@ function clearLog() {
 // ===================== 模态框系统 ================================
 // ================================================================
 
-function showModal(title, bodyHTML, buttons, onClose, noCloseOnOverlay) {
+function showModal(title, bodyHTML, buttons, onClose, noCloseOnOverlay, noAnimation) {
   let mc = document.getElementById('modal-container');
+  let alreadyOpen = mc.innerHTML.trim().length > 0;
   let btnsHTML = buttons ? buttons.map((b, i) =>
     '<button class="' + (b.cls || 'btn-secondary') + '"' + (b.id ? ' id="' + b.id + '"' : '') + ' onclick="modalBtnAction(' + i + ')">' + b.text + '</button>'
   ).join('') : '<button class="btn-secondary" onclick="closeModal()">关闭</button>';
 
   let overlayClick = noCloseOnOverlay ? '' : 'onclick="event.target===this&&closeModal()"';
-  mc.innerHTML = '<div class="modal-overlay" ' + overlayClick + '>' +
-    '<div class="modal">' +
+  let animClass = (noAnimation || alreadyOpen) ? 'no-anim' : '';
+  mc.innerHTML = '<div class="modal-overlay ' + animClass + '" ' + overlayClick + '>' +
+    '<div class="modal ' + animClass + '">' +
     '<div class="modal-header"><h3>' + title + '</h3>' + (noCloseOnOverlay ? '' : '<button class="modal-close" onclick="closeModal()">&times;</button>') + '</div>' +
     '<div class="modal-body">' + bodyHTML + '</div>' +
     (buttons ? '<div class="modal-footer">' + btnsHTML + '</div>' : '') +
@@ -1935,20 +1968,10 @@ function showMainUI() {
   document.getElementById('char-create').style.display = 'none';
   document.getElementById('main-menu').style.display = 'block';
   document.getElementById('ending-screen').style.display = 'none';
-  document.getElementById('status-bar').style.display = 'none';
   document.getElementById('version-btn').style.display = 'none';
-  updateStatusBar();
   renderMainMenu();
   renderScoreDisplay();
   renderLog();
-}
-
-function updateStatusBar() {
-  if (!G) return;
-  let locEl = document.getElementById('sb-location');
-  if (locEl) {
-    locEl.textContent = G.player.city + '-' + (G.currentLocation || G.player.city);
-  }
 }
 
 function renderScoreDisplay() {
@@ -1988,26 +2011,31 @@ function renderMainMenu() {
   // === 分区信息面板 ===
   let html = '';
 
-  // 基础信息
+  // 基础信息 + 能力（合并）
   html += '<div class="info-section">';
   html += '<div class="info-section-title">📍 基础信息</div>';
   html += '<div class="info-section-body">';
   html += '<span>📅 ' + d.year + '年' + d.month + '月' + d.day + '日</span>';
   html += '<span>🕐 ' + formatTime(t.h, t.min) + '</span>';
   let weatherIcon = G.weather === '晴天' ? '☀️' : G.weather === '多云' ? '⛅' : G.weather === '下雨' ? '🌧️' : G.weather === '下雪' ? '❄️' : '🌤️';
-  html += '<span>📍 ' + G.player.city + '-' + (G.currentLocation || G.player.city) + '</span>';
   html += '<span>' + weatherIcon + ' ' + (G.weather || '晴天') + '</span>';
+  html += '<span>📍 ' + G.player.city + '-' + (G.currentLocation || G.player.city) + '</span>';
+  html += '<span>🚗 驾驶 ' + G.player.drive.toFixed(1) + '</span>';
+  html += '<span>🏎️ 豪车 ' + G.player.luxury.toFixed(1) + '</span>';
+  html += '<span>🗣️ 话术 ' + G.player.talk.toFixed(1) + '</span>';
+  if (G.hasBike) {
+    let bikeStatus = G.bikeAvailable ? '✅' : '❌';
+    html += '<span>🚲 代步车 ' + bikeStatus + '</span>';
+  }
   html += '</div></div>';
 
-  // 个人信息
+  // 个人信息（金钱置顶）
   html += '<div class="info-section">';
   html += '<div class="info-section-title">👤 个人信息</div>';
   html += '<div class="info-section-body">';
-  html += '<span>姓名：' + G.player.name + '</span>';
-  html += '<span>👤 ' + G.player.age + '岁</span>';
-  html += '<span>📅 驾龄' + G.player.exp + '年</span>';
+  html += '<span style="color:var(--gold);font-size:14px;font-weight:bold;">💰 ' + G.player.money + '元</span>';
+  html += '<span>' + G.player.name + ' · ' + G.player.age + '岁 · 驾龄' + G.player.exp + '年</span>';
   html += '<span>征信：' + G.credit + '</span>';
-  html += '<span style="color:var(--gold);">💰 ' + G.player.money + '元</span>';
   if (G.family.hasSpouse) {
     html += '<span>💑 ' + G.family.spouseName + '</span>';
   }
@@ -2019,20 +2047,6 @@ function renderMainMenu() {
   }
   if (G.loans && G.loans.length > 0) {
     html += '<span style="color:var(--danger);">💳 月供' + G.loans.reduce((s,l) => s + l.monthlyPayment, 0) + '元</span>';
-  }
-  html += '</div></div>';
-
-  // 能力
-  html += '<div class="info-section">';
-  html += '<div class="info-section-title">⚡ 能力</div>';
-  html += '<div class="info-section-body">';
-  html += '<span>🚗 驾驶 ' + G.player.drive.toFixed(1) + '</span>';
-  html += '<span>🏎️ 豪车 ' + G.player.luxury.toFixed(1) + '</span>';
-  html += '<span>🗣️ 话术 ' + G.player.talk.toFixed(1) + '</span>';
-  html += '<span>📅 驾龄' + G.player.exp + '年</span>';
-  if (G.hasBike) {
-    let bikeStatus = G.bikeAvailable ? '✅ 在身边' : '❌ 未在身边';
-    html += '<span>🚲 代步车 ' + bikeStatus + '</span>';
   }
   html += '</div></div>';
 
@@ -2230,15 +2244,16 @@ function showJoinPlatform() {
       if (canPreferred) {
         html += '<button class="btn-warning btn-small" onclick="joinPlatform(\'' + pk + '\',true)">优选加入（' + (equipFee + roadFee + prefBonus) + '元）</button>';
       }
-      // 旺季返聘：被清退后可重新加入
-      if (p.kickedOutMonth >= 0) {
-        if (canRejoinPlatform(pk)) {
-          html += '<button class="btn-warning btn-small" onclick="rejoinPlatform(\'' + pk + '\')">旺季返聘（免费重新加入）</button>';
-        } else {
-          html += '<span style="font-size:12px;color:var(--text-secondary);margin-left:8px;">不在返聘期</span>';
-        }
-      }
       html += '</div>';
+    } else if (p.kickedOutMonth >= 0) {
+      // 已清退：显示返聘按钮
+      if (canRejoinPlatform(pk)) {
+        html += '<div style="margin-top:10px;">';
+        html += '<button class="btn-warning btn-small" onclick="rejoinPlatform(\'' + pk + '\')">旺季返聘（免费重新加入）</button>';
+        html += '</div>';
+      } else {
+        html += '<p style="font-size:12px;color:var(--text-secondary);margin-top:8px;">⏳ 不在返聘期，请等待旺季（11月-2月）</p>';
+      }
     }
     html += '</div>';
   }
@@ -2261,6 +2276,7 @@ function upgradeToPreferred(pk) {
   }
   G.player.money -= equipFee;
   G.totalExpense += equipFee;
+  addExpenseRecord('装备费', equipFee);
   p.preferred = true;
   addLog('⬆ ' + pk + '升级为优选司机！-' + equipFee + '元', 'good');
   closeModal();
@@ -2301,6 +2317,7 @@ function joinPlatform(pk, preferred) {
 
   G.player.money -= total;
   G.totalExpense += total;
+  addExpenseRecord('培训费', total);
   p.joined = true;
   p.joinMonth = getGameMonthIndex();
   p.preferred = preferred;
@@ -2328,7 +2345,7 @@ function joinPlatform(pk, preferred) {
       '也可以在抢单大厅手动选择订单。');
   }, 500);
   showJoinPlatform();
-  updateStatusBar();
+  
   renderScoreDisplay();
   renderMainMenu();
   saveGame();
@@ -2350,7 +2367,7 @@ function rejoinPlatform(pk) {
   addLog('🐉 通过旺季返聘重新加入' + pk + '代驾！', 'good');
   closeModal();
   showJoinPlatform();
-  updateStatusBar();
+  
   renderScoreDisplay();
   renderMainMenu();
   saveGame();
@@ -2525,7 +2542,7 @@ function startOfflineFulfillment(npc, location) {
         G.injured = false;
         G.injuredUntilDay = -1;
         addLog('💪 伤势恢复，可以继续接单了！', 'good');
-        updateStatusBar(); renderMainMenu(); saveGame();
+        renderMainMenu(); saveGame();
       }
     }]);
     return;
@@ -2674,7 +2691,7 @@ function finishOfflineOrder(distance, fee, tip) {
   }
 
   showModal('服务完成', '<p style="color:var(--success);">服务完成！收入' + fee + '元' + (tip > 0 ? ' + 打赏' + tip + '元' : '') + '</p>',
-    [{text:'确定', cls:'btn-primary', action: function(){ closeModal(); updateStatusBar(); renderMainMenu(); saveGame(); }}]);
+    [{text:'确定', cls:'btn-primary', action: function(){ closeModal(); renderMainMenu(); saveGame(); }}]);
 }
 
 // ================================================================
@@ -2686,8 +2703,8 @@ function buildHeatmapHTML() {
   let t = getGameTime();
   let isNight = t.h >= 20 || t.h < 6;
 
-  let html = '<div class="heatmap-grid">';
-  landmarks.forEach((loc, idx) => {
+  // 计算每个地标的单量
+  let items = landmarks.map(function(loc) {
     let offlineOrders = isNight ? randInt(3, 10) : randInt(1, 5);
     let onlineOrders = isNight ? randInt(5, 15) : randInt(2, 8);
     let total = offlineOrders + onlineOrders;
@@ -2695,16 +2712,48 @@ function buildHeatmapHTML() {
     let dist = randInt(1, 20);
     let walkMin = randInt(5, 30);
     let bikeMin = (G.hasBike && G.bikeAvailable) ? Math.max(1, Math.floor(walkMin * 0.4)) : 0;
-    let bikeText = (G.hasBike && G.bikeAvailable) ? ' | 骑车' + bikeMin + 'min' : '';
+    return { loc, total, heat, dist, walkMin, bikeMin, offlineOrders, onlineOrders };
+  });
 
-    html += '<div class="heatmap-item" style="cursor:pointer;" onclick="travelToLocation(\'' + loc.replace(/'/g, "\\'") + '\',' + walkMin + ',' + bikeMin + ')">' +
-      '<div class="heat-level">' + heat + '</div>' +
-      '<div class="heat-name">' + loc + '</div>' +
-      '<div class="heat-count">' + dist + 'km | 步行' + walkMin + 'min' + bikeText + '</div>' +
-      '<div class="heat-count">报单' + offlineOrders + ' 线上' + onlineOrders + '</div>' +
+  // 按单量降序排列，取Top3并列展示
+  items.sort(function(a, b) { return b.total - a.total; });
+  let top3 = items.slice(0, 3);
+  let rest = items.slice(3);
+
+  let html = '<div style="margin-bottom:12px;">';
+  html += '<p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">📍 热门地标（按单量排序）</p>';
+  html += '<div style="display:flex;gap:8px;flex-wrap:wrap;">';
+  top3.forEach(function(item) {
+    let bikeMin = item.bikeMin;
+    let bikeText = (G.hasBike && G.bikeAvailable) ? ' | 骑车' + bikeMin + 'min' : '';
+    html += '<div style="flex:1;min-width:100px;background:#252525;border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center;cursor:pointer;" ' +
+      'onclick="travelToLocation(\'' + item.loc.replace(/'/g, "\\'") + '\',' + item.walkMin + ',' + bikeMin + ')">' +
+      '<div style="font-size:20px;margin-bottom:4px;">' + item.heat + '</div>' +
+      '<div style="font-size:13px;color:var(--text-primary);font-weight:bold;">' + item.loc + '</div>' +
+      '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">' + item.dist + 'km | 步行' + item.walkMin + 'min' + bikeText + '</div>' +
+      '<div style="font-size:11px;color:var(--gold);margin-top:2px;">报单' + item.offlineOrders + ' 线上' + item.onlineOrders + '</div>' +
       '</div>';
   });
-  html += '</div>';
+  html += '</div></div>';
+
+  // 其余地标折叠展示
+  if (rest.length > 0) {
+    html += '<details style="margin-top:4px;">';
+    html += '<summary style="font-size:12px;color:var(--text-secondary);cursor:pointer;padding:4px 0;">查看更多地标（' + rest.length + '个）</summary>';
+    html += '<div class="heatmap-grid" style="margin-top:8px;">';
+    rest.forEach(function(item) {
+      let bikeMin = item.bikeMin;
+      let bikeText = (G.hasBike && G.bikeAvailable) ? ' | 骑车' + bikeMin + 'min' : '';
+      html += '<div class="heatmap-item" style="cursor:pointer;" onclick="travelToLocation(\'' + item.loc.replace(/'/g, "\\'") + '\',' + item.walkMin + ',' + bikeMin + ')">' +
+        '<div class="heat-level">' + item.heat + '</div>' +
+        '<div class="heat-name">' + item.loc + '</div>' +
+        '<div class="heat-count">' + item.dist + 'km | 步行' + item.walkMin + 'min' + bikeText + '</div>' +
+        '<div class="heat-count">报单' + item.offlineOrders + ' 线上' + item.onlineOrders + '</div>' +
+        '</div>';
+    });
+    html += '</div></details>';
+  }
+
   return html;
 }
 
@@ -2716,7 +2765,7 @@ function travelToLocation(loc, walkMin, bikeMin) {
   G.currentLocation = loc;
   addLog('🚶 ' + method + '前往' + loc + '，耗时' + travelTime + '分钟', 'info');
   closeModal();
-  updateStatusBar();
+  
   renderMainMenu();
   saveGame();
 }
@@ -2768,7 +2817,7 @@ function becomeQuSongCheDriver() {
   addExpenseRecord('购物', 500);
   G.player.isQuSongCheDriver = true;
   addLog('🚗 成为取送车司机！装备费500元', 'good');
-  updateStatusBar(); showOnlineOrder(); saveGame();
+  showOnlineOrder(); saveGame();
   showModal('认证成功', '<p>您已成为取送车司机！</p><p>抢单大厅和派单中将出现取送车订单</p>', [{text:'确定',cls:'btn-primary',action:function(){ closeModal(); showOnlineOrder(); }}]);
 }
 
@@ -3056,29 +3105,38 @@ function showOnlineOrder() {
     if (G[pk + '_mianYong'] && dayIdx <= G[pk + '_mianYong']) hasMianYong = true;
     if (G[pk + '_baoShangBao'] && dayIdx <= G[pk + '_baoShangBao']) hasBaoShangBao = true;
   }
+
+  // 营销话术样式
+  let promoBg = 'background:#2a1515;border:1px solid #cc4444;';
+  let promoStyle = 'margin-top:10px;padding:8px 12px;border-radius:6px;' + promoBg;
+
+  // 构建各权益营销话术
+  function buildPromoCard(icon, text, subText) {
+    return '<div style="' + promoStyle + '"><p style="font-size:13px;color:#ff6b6b;">' + icon + ' ' + text + '</p>' +
+      '<p style="font-size:11px;color:var(--text-secondary);margin-top:4px;">' + subText + '</p></div>';
+  }
+
   let promoHTML = '';
-  if (!hasHeatmap) {
-    let missed = randInt(3, 10);
-    promoHTML = '<div style="margin-top:10px;padding:8px 12px;background:#2a1a1a;border:1px solid var(--danger);border-radius:6px;">' +
-      '<p style="font-size:13px;color:var(--danger);">⚠️ 过去十分钟内您因未开热力图错过 <b>' + missed + '</b> 单</p>' +
-      '<p style="font-size:11px;color:var(--text-secondary);margin-top:4px;">推荐解锁热力图接到更多订单</p></div>';
-  } else if (!hasYouzhi) {
-    let missed = randInt(3, 10);
-    promoHTML = '<div style="margin-top:10px;padding:8px 12px;background:#1a2a1a;border:1px solid var(--gold);border-radius:6px;">' +
-      '<p style="font-size:13px;color:var(--gold);">💡 过去十分钟内您因未解锁权益错过 <b>' + missed + '</b> 单</p>' +
-      '<p style="font-size:11px;color:var(--text-secondary);margin-top:4px;">推荐您解锁优质订单优先享接到更多订单</p></div>';
-  } else if (!hasMianYong) {
-    let lostIncome = randInt(200, 800);
-    promoHTML = '<div style="margin-top:10px;padding:8px 12px;background:#1a2a1a;border:1px solid var(--gold);border-radius:6px;">' +
-      '<p style="font-size:13px;color:var(--gold);">💰 过去一周您因未解锁权益少收入 <b>' + lostIncome + '</b> 元</p>' +
-      '<p style="font-size:11px;color:var(--text-secondary);margin-top:4px;">推荐您解锁超值免佣包获得更多收入</p></div>';
-  } else if (!hasBaoShangBao) {
-    promoHTML = '<div style="margin-top:10px;padding:8px 12px;background:#1a1a2a;border:1px solid #60a5fa;border-radius:6px;">' +
-      '<p style="font-size:13px;color:#60a5fa;">🛡️ 推荐您解锁出险保上保权益</p>' +
-      '<p style="font-size:11px;color:var(--text-secondary);margin-top:4px;">双重保障，接单无忧</p></div>';
-  } else {
-    promoHTML = '<div style="margin-top:10px;padding:8px 12px;background:#1a2a1a;border:1px solid var(--success);border-radius:6px;">' +
+  if (hasHeatmap && hasYouzhi && hasMianYong && hasBaoShangBao) {
+    // 全部生效：今日宜做单（绿色）
+    promoHTML = '<div style="margin-top:10px;padding:8px 12px;background:#152a15;border:1px solid var(--success);border-radius:6px;">' +
       '<p style="font-size:13px;color:var(--success);">🌟 今日宜做单</p></div>';
+  } else {
+    // 热力图失效时，始终展示热力图营销
+    if (!hasHeatmap) {
+      let missed = randInt(3, 10);
+      promoHTML += buildPromoCard('⚠️', '过去十分钟内您因未开热力图错过 <b>' + missed + '</b> 单', '推荐解锁热力图接到更多订单');
+    }
+    // 其他权益营销（按优先级：优质订单优先享 > 超值免佣包 > 保上保）
+    if (!hasYouzhi) {
+      let missed = randInt(3, 10);
+      promoHTML += buildPromoCard('💡', '过去十分钟内您因未解锁权益错过 <b>' + missed + '</b> 单', '推荐您解锁优质订单优先享接到更多订单');
+    } else if (!hasMianYong) {
+      let lostIncome = randInt(200, 800);
+      promoHTML += buildPromoCard('💰', '过去一周您因未解锁权益少收入 <b>' + lostIncome + '</b> 元', '推荐您解锁超值免佣包获得更多收入');
+    } else if (!hasBaoShangBao) {
+      promoHTML += buildPromoCard('🛡️', '推荐您解锁出险保上保权益', '双重保障，接单无忧');
+    }
   }
   html += promoHTML;
 
@@ -3157,7 +3215,7 @@ function toggleListening(pk) {
     startDispatchTimer(pk);
   }
   
-  updateStatusBar();
+  
   renderScoreDisplay();
   showOnlineOrder();
   saveGame();
@@ -3457,7 +3515,7 @@ function acceptOrder(idx) {
   addLog('✅ 成功接到' + order.platform + '订单！' + order.start + '→' + order.end, 'good');
 
   closeModal();
-  updateStatusBar(); renderMainMenu(); saveGame();
+  renderMainMenu(); saveGame();
 }
 
 function rejectOrder(idx) {
@@ -3482,7 +3540,7 @@ function rejectOrder(idx) {
   }
   addLog('⏭️ 拒绝了一个订单', 'info');
   showOnlineOrder();
-  updateStatusBar();
+  
   renderScoreDisplay();
 }
 
@@ -3525,7 +3583,7 @@ function goServeOrder() {
     addLog('🚫 取消了' + G.currentOrder.platform + '订单', 'bad');
     G.currentOrder = null;
     p.hasOrder = false;
-    updateStatusBar(); renderMainMenu(); saveGame();
+    renderMainMenu(); saveGame();
   }}]);
 }
 
@@ -3647,8 +3705,12 @@ function dispatchSingleOrder(pk) {
   } else if (modeRand < 0.72) {
     // 实时计费 25%
     mode = '实时计费';
-    income = randInt(targetMin, targetMax);
-    distance = Math.max(3, Math.round(income / 8));
+    let distRand = Math.random();
+    if (distRand < 0.65) distance = randInt(1, 20);
+    else if (distRand < 0.93) distance = randInt(20, 40);
+    else if (distRand < 0.98) distance = randInt(40, 60);
+    else distance = randInt(60, 100);
+    income = distance <= 5 ? 25 : 25 + (distance - 5) * 8;
   } else if (modeRand < 0.77) {
     // 包时 5%
     let baoShiRand = Math.random();
@@ -3819,7 +3881,7 @@ function showMultiDispatchNotification(orders) {
         addLog('⏭️ 取消了' + o.platform + '派单', 'info');
       });
       closeModal();
-      updateStatusBar(); renderScoreDisplay();
+      renderScoreDisplay();
     }}
   ], null, true);
 }
@@ -3844,7 +3906,7 @@ function acceptMultiDispatch(idx) {
   G.platforms[accepted.platform].hasOrder = true;
   addLog('✅ 接到' + accepted.platform + '派单！' + accepted.start + '→' + accepted.end, 'good');
   closeModal();
-  updateStatusBar(); renderMainMenu(); saveGame();
+  renderMainMenu(); saveGame();
 }
 
 function processDispatch() {
@@ -3885,7 +3947,7 @@ function showDispatchNotification(order) {
         addLog('⏭️ 派单超时，自动取消' + o.platform + '订单', 'info');
       }
       closeModal();
-      updateStatusBar(); renderScoreDisplay();
+      renderScoreDisplay();
     }
   }, 1000);
   window._dispatchTimer = timer;
@@ -3899,7 +3961,7 @@ function showDispatchNotification(order) {
       G.platforms[o.platform].hasOrder = true;
       addLog('✅ 接到' + o.platform + '派单！' + o.start + '→' + o.end, 'good');
       closeModal();
-      updateStatusBar(); renderMainMenu(); saveGame();
+      renderMainMenu(); saveGame();
     }},
     {text:'不接（15s）', cls:'btn-secondary', id:'dispatch-timer-btn', action: function(){
       clearInterval(window._dispatchTimer);
@@ -3920,7 +3982,7 @@ function showDispatchNotification(order) {
       }
       addLog('⏭️ 拒绝了' + o.platform + '派单', 'info');
       closeModal();
-      updateStatusBar();
+      
       renderScoreDisplay();
     }}
   ], null, true);
@@ -4004,7 +4066,7 @@ function startFulfillment(order) {
         G.injured = false;
         G.injuredUntilDay = -1;
         addLog('💪 伤势恢复，可以继续接单了！', 'good');
-        updateStatusBar(); renderMainMenu(); saveGame();
+        renderMainMenu(); saveGame();
       }
     }]);
     return;
@@ -4031,7 +4093,7 @@ function startFulfillment(order) {
         closeModal();
         G.currentOrder = null;
         if (order.platform) G.platforms[order.platform].hasOrder = false;
-        updateStatusBar(); renderMainMenu(); saveGame();
+        renderMainMenu(); saveGame();
         // 10%概率触发空驶补贴外呼
         if (order.platform && Math.random() < 0.1) {
           let subsidy = randInt(5, 10);
@@ -4041,7 +4103,7 @@ function startFulfillment(order) {
             G.player.money += subsidy; G.totalIncome += subsidy;
             addIncomeRecord('平台订单', subsidy);
             addLog('💰 收到' + pk + '空驶补贴+' + subsidy + '元', 'good');
-            closeModal(); updateStatusBar(); renderMainMenu(); saveGame();
+            closeModal(); renderMainMenu(); saveGame();
           }}, {text:'知道了', cls:'btn-secondary', action: closeModal}]);
         }
       }}
@@ -4056,7 +4118,7 @@ function startFulfillment(order) {
         closeModal();
         G.currentOrder = null;
         if (order.platform) G.platforms[order.platform].hasOrder = false;
-        updateStatusBar(); renderMainMenu(); saveGame();
+        renderMainMenu(); saveGame();
         // 10%概率触发空驶补贴外呼
         if (order.platform && Math.random() < 0.1) {
           let subsidy = randInt(5, 10);
@@ -4066,7 +4128,7 @@ function startFulfillment(order) {
             G.player.money += subsidy; G.totalIncome += subsidy;
             addIncomeRecord('平台订单', subsidy);
             addLog('💰 收到' + pk + '空驶补贴+' + subsidy + '元', 'good');
-            closeModal(); updateStatusBar(); renderMainMenu(); saveGame();
+            closeModal(); renderMainMenu(); saveGame();
           }}, {text:'知道了', cls:'btn-secondary', action: closeModal}]);
         }
       }}
@@ -4095,7 +4157,7 @@ function startFulfillment(order) {
         G.currentOrder = null;
         p2.hasOrder = false;
         addLog('🚫 因代步车问题取消订单', 'bad');
-        updateStatusBar(); renderMainMenu(); saveGame();
+        renderMainMenu(); saveGame();
       }},
       {text:'把代步车放在原地', cls:'btn-warning', action: function(){
         closeModal();
@@ -4202,7 +4264,7 @@ function arriveAtStart(order) {
         G.currentOrder = null;
         p.hasOrder = false;
         addLog('📋 消单报备，无责取消', 'info');
-        updateStatusBar();
+        
         renderMainMenu();
         saveGame();
       }},
@@ -4221,7 +4283,7 @@ function arriveAtStart(order) {
               G.currentOrder = null;
               p.hasOrder = false;
               addLog('📋 消单报备，无责取消', 'info');
-              updateStatusBar(); renderMainMenu(); saveGame();
+              renderMainMenu(); saveGame();
             }},
             {text:'自己取消', cls:'btn-danger', action: function(){
               closeModal();
@@ -4233,7 +4295,7 @@ function arriveAtStart(order) {
               }
               G.currentOrder = null;
               p.hasOrder = false;
-              updateStatusBar(); renderMainMenu(); saveGame();
+              renderMainMenu(); saveGame();
             }}
           ]);
         }
@@ -4301,7 +4363,7 @@ function checkVehicleAndDrive(order) {
                   closeModal();
                   G.currentOrder = null;
                   G.platforms[order.platform].hasOrder = false;
-                  updateStatusBar(); renderMainMenu(); saveGame();
+                  renderMainMenu(); saveGame();
                 }}]);
               return;
             }
@@ -4324,7 +4386,7 @@ function checkVehicleAndDrive(order) {
                     closeModal();
                     G.currentOrder = null;
                     G.platforms[order.platform].hasOrder = false;
-                    updateStatusBar(); renderMainMenu(); saveGame();
+                    renderMainMenu(); saveGame();
                     checkMoneyNegative();
                   }}]);
               }}
@@ -4344,7 +4406,7 @@ function checkVehicleAndDrive(order) {
                       closeModal();
                       G.currentOrder = null;
                       G.platforms[order.platform].hasOrder = false;
-                      updateStatusBar(); renderMainMenu(); saveGame();
+                      renderMainMenu(); saveGame();
                       checkMoneyNegative();
                     }}]);
                 }
@@ -4365,7 +4427,7 @@ function checkVehicleAndDrive(order) {
               G.currentOrder = null;
               G.platforms[order.platform].hasOrder = false;
               addLog('📋 上传豪车水印照片，无责取消', 'info');
-              updateStatusBar(); renderMainMenu(); saveGame();
+              renderMainMenu(); saveGame();
             }},
             {text:'直接取消（有责）', cls:'btn-danger', action: function(){
               closeModal();
@@ -4374,7 +4436,7 @@ function checkVehicleAndDrive(order) {
               G.platforms[order.platform].rejectCount7++;
               G.platforms[order.platform].rejectCount30++;
               addLog('❌ 取消豪车订单（有责）', 'bad');
-              updateStatusBar(); renderMainMenu(); saveGame();
+              renderMainMenu(); saveGame();
             }},
             {text:'返回', cls:'btn-secondary', action: function(){ closeModal(); checkVehicleAndDrive(order); }}
           ]);
@@ -4407,7 +4469,7 @@ function checkVehicleAndDrive(order) {
                 closeModal();
                 G.currentOrder = null;
                 if (order.platform) G.platforms[order.platform].hasOrder = false;
-                updateStatusBar(); renderMainMenu(); saveGame();
+                renderMainMenu(); saveGame();
                 checkMoneyNegative();
               }}]);
           }}
@@ -4427,7 +4489,7 @@ function checkVehicleAndDrive(order) {
                   closeModal();
                   G.currentOrder = null;
                   G.platforms[order.platform].hasOrder = false;
-                  updateStatusBar(); renderMainMenu(); saveGame();
+                  renderMainMenu(); saveGame();
                   checkMoneyNegative();
                 }}]);
             }
@@ -4492,6 +4554,7 @@ function checkMoreDrivingEvents(order) {
         closeModal();
         G.player.money -= cost;
         G.totalExpense += cost;
+        addExpenseRecord('代驾垫付', cost);
         order.income += cost;
         if (chance(70)) {
           p.serviceScore = Math.min(100, p.serviceScore + 0.2);
@@ -4503,6 +4566,7 @@ function checkMoreDrivingEvents(order) {
         closeModal();
         G.player.money -= cost;
         G.totalExpense += cost;
+        addExpenseRecord('代驾垫付', cost);
         order.income += (cost + 20);
         if (chance(80)) {
           p.daijiaScore = Math.max(0, p.daijiaScore - 4);
@@ -4752,7 +4816,7 @@ function completeOnlineOrder(order) {
 
   showModal('订单完成', html, [{text:'确定', cls:'btn-primary', action: function(){
     closeModal();
-    updateStatusBar();
+    
     renderScoreDisplay();
     renderMainMenu();
     saveGame();
@@ -4799,7 +4863,7 @@ function completeOnlineOrder(order) {
         }
       }
       addLog('😴 订单结束后扛不住了，强制休息到次日', 'info');
-      showModal('强制休息', '<p>😴 扛不住了，我得睡会儿</p><p style="font-size:13px;">今日睡眠不足5小时，已强制休息至次日</p>', [{text:'确定', cls:'btn-primary', action: function(){ closeModal(); updateStatusBar(); renderMainMenu(); saveGame(); }}]);
+      showModal('强制休息', '<p>😴 扛不住了，我得睡会儿</p><p style="font-size:13px;">今日睡眠不足5小时，已强制休息至次日</p>', [{text:'确定', cls:'btn-primary', action: function(){ closeModal(); renderMainMenu(); saveGame(); }}]);
     }
   }
 }
@@ -4842,7 +4906,7 @@ function handleDaijiaScoreZero(pk) {
         closeModal();
         G.currentOrder = null;
         p.hasOrder = false;
-        updateStatusBar(); renderScoreDisplay(); renderMainMenu(); saveGame();
+        renderScoreDisplay(); renderMainMenu(); saveGame();
       }}]);
   } else {
     // 首次，花1000恢复3分
@@ -4859,7 +4923,7 @@ function handleDaijiaScoreZero(pk) {
               closeModal();
               G.currentOrder = null;
               p.hasOrder = false;
-              updateStatusBar(); renderScoreDisplay(); renderMainMenu(); saveGame();
+              renderScoreDisplay(); renderMainMenu(); saveGame();
             }}]);
           return;
         }
@@ -4870,7 +4934,7 @@ function handleDaijiaScoreZero(pk) {
         closeModal();
         G.currentOrder = null;
         p.hasOrder = false;
-        updateStatusBar(); renderScoreDisplay(); renderMainMenu(); saveGame();
+        renderScoreDisplay(); renderMainMenu(); saveGame();
         checkMoneyNegative();
       }},
       {text:'放弃（被清退）', cls:'btn-danger', action: function(){
@@ -4880,7 +4944,7 @@ function handleDaijiaScoreZero(pk) {
         closeModal();
         G.currentOrder = null;
         p.hasOrder = false;
-        updateStatusBar(); renderScoreDisplay(); renderMainMenu(); saveGame();
+        renderScoreDisplay(); renderMainMenu(); saveGame();
       }}
     ]);
   }
@@ -5005,7 +5069,7 @@ function doOfflineTraining(pk) {
   addLog('📚 完成' + pk + '线下培训，服务分+5', 'good');
 
   showModal('培训完成', '<p style="color:var(--success);">线下培训完成！服务分+5</p><p>耗时：2小时</p>',
-    [{text:'确定', cls:'btn-primary', action: function(){ closeModal(); showTraining(); updateStatusBar(); renderScoreDisplay(); saveGame(); }}]);
+    [{text:'确定', cls:'btn-primary', action: function(){ closeModal(); showTraining(); renderScoreDisplay(); saveGame(); }}]);
 }
 
 // ================================================================
@@ -5087,7 +5151,7 @@ function buyItem(id) {
         G.bikeLocation = G.currentLocation;
         G.bikeBoughtDate = G.time;
         addLog('🚲 购买代步车（一次性）！', 'good');
-        closeModal(); updateStatusBar(); showShop(); saveGame();
+        closeModal(); showShop(); saveGame();
       }},
       {text:'分期购买（550元×6期）', cls:'btn-success', action: function(){
         G.hasBike = true;
@@ -5096,7 +5160,7 @@ function buyItem(id) {
         G.bikeBoughtDate = G.time;
         G.bikeInstallment = { totalMonths: 6, monthsLeft: 6, monthlyPayment: 550 };
         addLog('🚲 分期购买代步车（550元×6期）！', 'good');
-        closeModal(); updateStatusBar(); showShop(); saveGame();
+        closeModal(); showShop(); saveGame();
       }},
       {text:'取消', cls:'btn-secondary', action: closeModal}
     ]);
@@ -5123,7 +5187,7 @@ function buyItem(id) {
     addLog('🕹️ 购买作弊器！此后每单均为100km+订单', 'warn');
   }
 
-  updateStatusBar();
+  
   showShop();
   saveGame();
 }
@@ -5135,7 +5199,7 @@ function eatFood() {
       G.player.money -= 100; G.totalExpense += 100;
       advanceTime(30);
       addLog('🍜 吃饭 -100元', 'info');
-      closeModal(); updateStatusBar(); renderMainMenu(); saveGame();
+      closeModal(); renderMainMenu(); saveGame();
     }},
     {text:'吃点好的（200元）', cls:'btn-warning', action: function(){
       G.player.money -= 200; G.totalExpense += 200;
@@ -5146,7 +5210,7 @@ function eatFood() {
         addLog('🎉 吃饭时遇到潜在客户！', 'good');
         setTimeout(startOfflineOrder, 300);
       }
-      updateStatusBar(); renderMainMenu(); saveGame();
+      renderMainMenu(); saveGame();
     }},
     {text:'取消', cls:'btn-secondary', action:closeModal}
   ]);
@@ -5168,7 +5232,7 @@ function showBossIntro() {
       G.player.money -= 40000; G.totalExpense += 40000;
       G.isBoss = true; G.bossDeposit = 40000;
       addLog('👔 成为代驾包工头！缴纳保证金40000元', 'good');
-      closeModal(); updateStatusBar(); renderMainMenu(); saveGame();
+      closeModal(); renderMainMenu(); saveGame();
     }},
     {text:'取消', cls:'btn-secondary', action: closeModal}
   ]);
@@ -5279,7 +5343,7 @@ function recruitDriver(idx) {
     recruitMonth: getGameMonthIndex(), contractMonths: 12, contractStartMonth: getGameMonthIndex(), lastInteractMonth: -1, dailyOrderBonus: 0});
   G.driverCandidates.splice(idx, 1);
   addLog('👔 招募司机' + c.name + '，花费' + cost + '元', 'good');
-  updateStatusBar(); showBossManage(); saveGame();
+  showBossManage(); saveGame();
 }
 
 function skipDriver(idx) {
@@ -5298,7 +5362,7 @@ function dismissDriver(idx) {
       G.player.money -= severanceCost; G.totalExpense += severanceCost;
       addLog('👋 辞退司机' + d.name + '，补偿' + severanceCost + '元', 'bad');
       G.drivers.splice(idx, 1);
-      closeModal(); updateStatusBar(); showBossManage(); saveGame();
+      closeModal(); showBossManage(); saveGame();
     }},
     {text:'取消', cls:'btn-secondary', action: closeModal}
   ]);
@@ -5325,7 +5389,7 @@ function renewContract(idx, months, cost) {
   addExpenseRecord('购物', cost);
   d.contractMonths += months;
   addLog('📝 续签司机' + d.name + '合同' + months + '个月，花费' + cost + '元', 'info');
-  closeModal(); updateStatusBar(); showBossManage(); saveGame();
+  closeModal(); showBossManage(); saveGame();
   showModal('续签成功', '<p>已为' + d.name + '续签' + months + '个月</p>', [{text:'确定',cls:'btn-primary',action:function(){ closeModal(); showBossManage(); }}]);
 }
 
@@ -5339,7 +5403,7 @@ function recommendDriver(idx) {
       addIncomeRecord('包工头收入', bonus);
       addLog('🎉 推荐' + d.name + '到' + d.platform + '，获得奖金' + bonus + '元', 'good');
       G.drivers.splice(idx, 1);
-      closeModal(); updateStatusBar(); showBossManage(); saveGame();
+      closeModal(); showBossManage(); saveGame();
     }},
     {text:'取消', cls:'btn-secondary', action: closeModal}
   ]);
@@ -5351,7 +5415,7 @@ function changeDriverBatch() {
   addExpenseRecord('购物', 15000);
   generateDriverCandidates(true);
   addLog('👔 换一批司机候选人，花费15000元', 'info');
-  updateStatusBar(); showBossManage(); saveGame();
+  showBossManage(); saveGame();
 }
 
 // ================================================================
@@ -5364,12 +5428,13 @@ function redeemFundAll() {
   if (!G.fundTotal || G.fundTotal.amount <= 0) return;
   let value = G.fundTotal.currentValue;
   G.player.money += value; G.totalIncome += value;
+  addIncomeRecord('基金赎回', value);
   let profit = value - G.fundTotal.amount;
   if (profit > 0) addIncomeRecord('基金股票', profit);
   let profitText = profit >= 0 ? '+' + profit : '' + profit;
   addLog('📈 赎回全部基金股票，获得' + value + '元（' + profitText + '）', profit >= 0 ? 'good' : 'bad');
   G.fundTotal = { amount: 0, currentValue: 0, lastProcessDay: -1 };
-  updateStatusBar(); showFinanceMenu(); saveGame();
+  showFinanceMenu(); saveGame();
 }
 
 function showFinanceMenu() {
@@ -5483,6 +5548,7 @@ function showBankFinance(days) {
       if (amount < 10000) { showModal('金额不足', '<p>起购金额10000元</p>', [{text:'确定',cls:'btn-primary',action:closeModal}]); return; }
       if (G.player.money < amount) { showModal('余额不足', '<p>需要' + amount + '元</p>', [{text:'确定',cls:'btn-primary',action:closeModal}]); return; }
       G.player.money -= amount; G.totalExpense += amount;
+      addExpenseRecord('理财购买', amount);
       if (!G.financeProducts) G.financeProducts = [];
       G.financeProducts.push({
         type: 'bank', amount: amount, daysLeft: days, totalDays: days,
@@ -5510,7 +5576,7 @@ function showBankFinance(days) {
           }}
         ]);
       }
-      closeModal(); updateStatusBar(); saveGame();
+      closeModal(); saveGame();
     }},
     {text:'取消', cls:'btn-secondary', action: closeModal}
   ]);
@@ -5545,13 +5611,14 @@ function showFundFinance() {
       if (amount < 100) { showModal('金额不足', '<p>起购金额100元</p>', [{text:'确定',cls:'btn-primary',action:closeModal}]); return; }
       if (G.player.money < amount) { showModal('余额不足', '<p>需要' + amount + '元</p>', [{text:'确定',cls:'btn-primary',action:closeModal}]); return; }
       G.player.money -= amount; G.totalExpense += amount;
+      addExpenseRecord('基金买入', amount);
       if (!G.fundTotal) G.fundTotal = { amount: 0, currentValue: 0, lastProcessDay: -1 };
       // 按当前市值比例折算追加
       let ratio = G.fundTotal.amount > 0 ? G.fundTotal.currentValue / G.fundTotal.amount : 1;
       G.fundTotal.amount += amount;
       G.fundTotal.currentValue += Math.floor(amount * ratio);
       addLog('📈 追加基金股票' + amount + '元，总投入' + G.fundTotal.amount + '元', 'info');
-      closeModal(); updateStatusBar(); showFundFinance(); saveGame();
+      closeModal(); showFundFinance(); saveGame();
     }});
     buttons.push({text:'全部赎回（' + currentValue + '元）', cls:'btn-danger', action: function(){
       if (!G.fundTotal || G.fundTotal.amount <= 0) return;
@@ -5561,7 +5628,7 @@ function showFundFinance() {
       let pText = profit >= 0 ? '+' + profit : '' + profit;
       addLog('📈 赎回全部基金股票，获得' + value + '元（' + pText + '）', profit >= 0 ? 'good' : 'bad');
       G.fundTotal = { amount: 0, currentValue: 0, lastProcessDay: -1 };
-      closeModal(); updateStatusBar(); showFinanceMenu(); saveGame();
+      closeModal(); showFinanceMenu(); saveGame();
     }});
     buttons.push({text:'取消', cls:'btn-secondary', action: closeModal});
   } else {
@@ -5570,9 +5637,10 @@ function showFundFinance() {
       if (amount < 100) { showModal('金额不足', '<p>起购金额100元</p>', [{text:'确定',cls:'btn-primary',action:closeModal}]); return; }
       if (G.player.money < amount) { showModal('余额不足', '<p>需要' + amount + '元</p>', [{text:'确定',cls:'btn-primary',action:closeModal}]); return; }
       G.player.money -= amount; G.totalExpense += amount;
+      addExpenseRecord('基金购买', amount);
       G.fundTotal = { amount: amount, currentValue: amount, lastProcessDay: getGameDayIndex() };
       addLog('📈 购买基金股票，投入' + amount + '元', 'info');
-      closeModal(); updateStatusBar(); saveGame();
+      closeModal(); saveGame();
     }});
     buttons.push({text:'取消', cls:'btn-secondary', action: closeModal});
   }
@@ -5595,17 +5663,19 @@ function showLottery() {
       if (amount < 10) { showModal('金额不足', '<p>起购金额10元</p>', [{text:'确定',cls:'btn-primary',action:closeModal}]); return; }
       if (G.player.money < amount) { showModal('余额不足', '<p>需要' + amount + '元</p>', [{text:'确定',cls:'btn-primary',action:closeModal}]); return; }
       G.player.money -= amount; G.totalExpense += amount;
+      addExpenseRecord('乐透购买', amount);
       
       if (Math.random() < 0.01) {
         let winAmount = amount * 100;
         G.player.money += winAmount; G.totalIncome += winAmount;
+        addIncomeRecord('乐透', winAmount);
         addLog('🎰🎉 乐透中奖！！！投入' + amount + '元，获得' + winAmount + '元！！！', 'good');
         showModal('🎉 恭喜中奖！', '<p style="color:var(--gold);font-size:20px;text-align:center;">投入' + amount + '元，获得' + winAmount + '元！</p><p style="text-align:center;">运气爆棚！</p>', [{text:'太开心了！', cls:'btn-primary', action:closeModal}]);
       } else {
         addLog('🎰 乐透未中奖，损失' + amount + '元', 'bad');
         showModal('很遗憾', '<p>没有中奖，损失' + amount + '元</p><p style="font-size:12px;color:var(--text-secondary);">下次好运！</p>', [{text:'继续', cls:'btn-secondary', action:closeModal}]);
       }
-      updateStatusBar(); saveGame();
+      saveGame();
     }},
     {text:'算了', cls:'btn-secondary', action: closeModal}
   ]);
@@ -5628,7 +5698,7 @@ function redeemFinance(idx) {
       addLog('📈 赎回基金股票，获得' + value + '元（' + profitText + '）', profit >= 0 ? 'good' : 'bad');
       G.fundTotal = { amount: 0, currentValue: 0, lastProcessDay: -1 };
     }
-    updateStatusBar(); showFinanceMenu(); saveGame();
+    showFinanceMenu(); saveGame();
   }
 }
 
@@ -5722,7 +5792,7 @@ function buyTrainTicket(city) {
   let landmarks = randLandmarks(city, 1);
   G.currentLocation = landmarks.length > 0 ? landmarks[0] : city;
   addLog('🚄 乘坐高铁前往' + city + '，花费500元', 'info');
-  closeModal(); updateStatusBar(); renderMainMenu(); saveGame();
+  closeModal(); renderMainMenu(); saveGame();
   showModal('到达' + city, '<p>您已到达' + city + '，当前位置：' + G.currentLocation + '</p>', [{text:'开始接单', cls:'btn-primary', action:closeModal}]);
 }
 
@@ -5747,7 +5817,7 @@ function goToSleep() {
       advanceTime(minutesTo10AM);
       recordSleep(sleepHours);
       addLog('😴 收工睡觉，睡眠' + Math.floor(sleepHours) + '小时', 'info');
-      closeModal(); updateStatusBar(); renderMainMenu(); saveGame();
+      closeModal(); renderMainMenu(); saveGame();
     }},
     {text:'小睡', cls:'btn-secondary', action: function(){
       closeModal();
@@ -5776,7 +5846,7 @@ function doNap(hours) {
   advanceTime(hours * 60);
   recordSleep(hours);
   addLog('😴 小睡' + hours + '小时', 'info');
-  closeModal(); updateStatusBar(); renderMainMenu(); saveGame();
+  closeModal(); renderMainMenu(); saveGame();
 }
 
 function recordSleep(hours) {
@@ -5995,7 +6065,6 @@ function restartGame() {
   document.getElementById('ending-screen').style.display = 'none';
   document.getElementById('main-menu').style.display = 'none';
   document.getElementById('char-create').style.display = 'flex';
-  document.getElementById('status-bar').style.display = 'none';
   // 重置表单
   document.getElementById('inp-name').value = '';
   document.getElementById('inp-city').value = '';
@@ -6050,7 +6119,7 @@ function gameLoop() {
   // 派单由真实秒数定时器驱动，不在gameLoop中处理
 
   // 更新UI
-  updateStatusBar();
+  
   renderScoreDisplay();
 }
 
@@ -6188,6 +6257,7 @@ function doFastForward7Days(avgPlatform, avgOffline) {
               // 快速推进中代驾分清0，花1000恢复3分
               if (G.player.money >= 1000) {
                 G.player.money -= 1000; G.totalExpense += 1000; totalExpense += 1000;
+                addExpenseRecord('代驾分恢复', 1000);
                 pp.daijiaScore = 3;
                 pp.daijiaResetCount++;
               } else {
@@ -6222,7 +6292,7 @@ function doFastForward7Days(avgPlatform, avgOffline) {
   }
 
   addLog('⏩ 快速推进7天！完成' + totalPlatformOrders + '笔平台单+' + totalOfflineOrders + '笔报单，收入+' + totalIncome + '元' + (totalExpense > 0 ? '，车损-' + totalExpense + '元' : ''), 'info');
-  updateStatusBar(); renderMainMenu(); saveGame();
+  renderMainMenu(); saveGame();
 }
 
 function addExpenseRecord(category, amount) {
@@ -6238,9 +6308,17 @@ function addIncomeRecord(category, amount) {
 function showIncomeExpenseDetail() {
   let d = getGameDate();
   let currentMonth = getGameMonthIndex();
+  // 显示上一个自然月
+  let lastMonth = currentMonth - 1;
+  let lastDate;
+  if (d.month === 1) {
+    lastDate = { year: d.year - 1, month: 12 };
+  } else {
+    lastDate = { year: d.year, month: d.month - 1 };
+  }
 
-  let expenses = (G.expenseDetails || []).filter(r => r.monthIndex === currentMonth);
-  let incomes = (G.incomeDetails || []).filter(r => r.monthIndex === currentMonth);
+  let expenses = (G.expenseDetails || []).filter(r => r.monthIndex === lastMonth);
+  let incomes = (G.incomeDetails || []).filter(r => r.monthIndex === lastMonth);
 
   let expGroups = {};
   expenses.forEach(r => { expGroups[r.category] = (expGroups[r.category] || 0) + r.amount; });
@@ -6258,7 +6336,7 @@ function showIncomeExpenseDetail() {
     return h;
   }
 
-  let html = '<h4 style="margin-bottom:10px;">📊 ' + d.year + '年' + d.month + '月 收支明细</h4>';
+  let html = '<h4 style="margin-bottom:10px;">📊 ' + lastDate.year + '年' + lastDate.month + '月 收支明细</h4>';
 
   html += '<p style="color:var(--success);font-weight:bold;margin-bottom:4px;">收入（+' + totalInc + '元）</p>';
   html += '<div style="background:#1e1e1e;border-radius:4px;padding:8px 10px;margin-bottom:10px;">';
@@ -6308,6 +6386,7 @@ function showDriverInteract(idx) {
     {text:'谈心（2000元）', cls:'btn-warning', action: function(){
       if (G.player.money < 2000) { showModal('余额不足', '<p>需要2000元</p>', [{text:'确定',cls:'btn-primary',action:closeModal}]); return; }
       G.player.money -= 2000; G.totalExpense += 2000;
+      addExpenseRecord('辞退赔偿', 2000);
       d.lastInteractMonth = currentMonth;
       if (Math.random() < 0.5) {
         let bonus = randInt(1, 3);
@@ -6316,7 +6395,7 @@ function showDriverInteract(idx) {
       } else {
         addLog('💬 与' + d.name + '谈心，无事发生（花费2000元）', 'info');
       }
-      closeModal(); updateStatusBar(); saveGame();
+      closeModal(); saveGame();
     }},
     {text:'带做单', cls:'btn-success', action: function(){
       d.lastInteractMonth = currentMonth;
@@ -6336,10 +6415,11 @@ function showDriverInteract(idx) {
 function expandDriverSlots() {
   if (G.player.money < 10000) { showModal('余额不足', '<p>需要10000元</p>', [{text:'确定',cls:'btn-primary',action:closeModal}]); return; }
   G.player.money -= 10000; G.totalExpense += 10000;
+  addExpenseRecord('包工头保证金', 10000);
   G.bossDeposit += 10000;
   G.bossDriverSlots++;
   addLog('💼 追缴保证金10000元，司机名额+1（当前' + G.bossDriverSlots + '）', 'info');
-  updateStatusBar(); showBossManage(); saveGame();
+  showBossManage(); saveGame();
 }
 </script>
 </body>
