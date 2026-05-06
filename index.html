@@ -2351,7 +2351,7 @@ function joinPlatform(pk, preferred) {
 
 function rejoinPlatform(pk) {
   let p = G.platforms[pk];
-  if (p.joined || !canRejoinPlatform(pk)) return;
+  if (!canRejoinPlatform(pk)) return;
 
   p.joined = true;
   p.preferred = false;
