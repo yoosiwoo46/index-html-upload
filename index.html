@@ -2234,16 +2234,7 @@ function showJoinPlatform() {
       '<div>派单间隔：<span>' + (pk === 'DD' ? '1分钟' : pk === 'GD' ? '3分钟' : '5分钟') + '</span></div>' +
       '</div>';
 
-    if (!p.joined) {
-      html += '<div style="margin-top:10px;display:flex;gap:8px;">';
-      let totalFee = equipFee + roadFee;
-      let feeLabel = winter ? totalFee + '元 <span style="text-decoration:line-through;color:var(--text-secondary);font-size:11px;">' + ((pk==='E'?200:300)+300) + '元</span>' : totalFee + '元';
-      html += '<button class="btn-success btn-small" onclick="joinPlatform(\'' + pk + '\',false)">普通加入（' + feeLabel + '）</button>';
-      if (canPreferred) {
-        html += '<button class="btn-warning btn-small" onclick="joinPlatform(\'' + pk + '\',true)">优选加入（' + (equipFee + roadFee + prefBonus) + '元）</button>';
-      }
-      html += '</div>';
-    } else if (p.kickedOutMonth >= 0) {
+    if (p.kickedOutMonth >= 0) {
       // 已清退：显示返聘按钮
       if (canRejoinPlatform(pk)) {
         html += '<div style="margin-top:10px;">';
@@ -2252,6 +2243,15 @@ function showJoinPlatform() {
       } else {
         html += '<p style="font-size:12px;color:var(--text-secondary);margin-top:8px;">⏳ 不在返聘期，请等待旺季（11月-2月）</p>';
       }
+    } else if (!p.joined) {
+      html += '<div style="margin-top:10px;display:flex;gap:8px;">';
+      let totalFee = equipFee + roadFee;
+      let feeLabel = winter ? totalFee + '元 <span style="text-decoration:line-through;color:var(--text-secondary);font-size:11px;">' + ((pk==='E'?200:300)+300) + '元</span>' : totalFee + '元';
+      html += '<button class="btn-success btn-small" onclick="joinPlatform(\'' + pk + '\',false)">普通加入（' + feeLabel + '）</button>';
+      if (canPreferred) {
+        html += '<button class="btn-warning btn-small" onclick="joinPlatform(\'' + pk + '\',true)">优选加入（' + (equipFee + roadFee + prefBonus) + '元）</button>';
+      }
+      html += '</div>';
     }
     html += '</div>';
   }
