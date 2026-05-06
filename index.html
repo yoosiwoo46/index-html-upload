@@ -3698,8 +3698,12 @@ function dispatchSingleOrder(pk) {
   if (modeRand < 0.47) {
     // 一口价 47%
     mode = '一口价';
-    income = randInt(targetMin, targetMax);
-    distance = Math.max(3, Math.round((income - 20) / 6 + 5));
+    let distRand = Math.random();
+    if (distRand < 0.65) distance = randInt(1, 20);
+    else if (distRand < 0.93) distance = randInt(20, 40);
+    else if (distRand < 0.98) distance = randInt(40, 60);
+    else distance = randInt(60, 100);
+    income = distance <= 5 ? 20 : 20 + (distance - 5) * 6;
   } else if (modeRand < 0.72) {
     // 实时计费 25%
     mode = '实时计费';
@@ -5870,82 +5874,7 @@ function checkSleepHealth() {
 }
 
 // ===================== 月度收支流水 ================================
-function showMonthlyReport() {
-  let d = getGameDate();
-  let prevMonth = d.month === 1 ? 12 : d.month - 1;
-  let prevYear = d.month === 1 ? d.year - 1 : d.year;
 
-  // 称号检查
-  let newTitles = [];
-  if ((G._monthPlatformOrders || 0) > 150 && !(G.unlockedTitles || []).includes('有单就是干')) newTitles.push('有单就是干');
-  if ((G._monthOfflineOrders || 0) > 100 && !(G.unlockedTitles || []).includes('传奇报单王')) newTitles.push('传奇报单王');
-  if ((G._monthDamageCost || 0) > 10000 && !(G.unlockedTitles || []).includes('F1预备役')) newTitles.push('F1预备役');
-  if ((G._monthBossIncome || 0) > 10000 && !(G.unlockedTitles || []).includes('超绝包工头')) newTitles.push('超绝包工头');
-  if ((G._monthLuxuryOrders || 0) > 80 && !(G.unlockedTitles || []).includes('这把高端局')) newTitles.push('这把高端局');
-  if ((G._monthPenaltyCount || 0) > 0 && !(G.unlockedTitles || []).includes('常在河边走 哪有不湿鞋')) newTitles.push('常在河边走 哪有不湿鞋');
-  if (newTitles.length > 0) { if (!G.unlockedTitles) G.unlockedTitles = []; G.unlockedTitles = G.unlockedTitles.concat(newTitles); }
-
-  // 按分类汇总收支明细
-  let currentMonth = getGameMonthIndex();
-  let expenses = (G.expenseDetails || []).filter(r => r.monthIndex === currentMonth);
-  let incomes = (G.incomeDetails || []).filter(r => r.monthIndex === currentMonth);
-
-  let expGroups = {};
-  expenses.forEach(r => { expGroups[r.category] = (expGroups[r.category] || 0) + r.amount; });
-  let incGroups = {};
-  incomes.forEach(r => { incGroups[r.category] = (incGroups[r.category] || 0) + r.amount; });
-
-  let totalExp = expenses.reduce((s, r) => s + r.amount, 0);
-  let totalInc = incomes.reduce((s, r) => s + r.amount, 0);
-  let net = totalInc - totalExp;
-
-  function buildCategoryHTML(groups, color) {
-    let h = '';
-    for (let cat in groups) {
-      h += '<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;"><span>' + cat + '</span><span style="color:' + color + ';">' + (color === 'var(--success)' ? '+' : '-') + groups[cat] + '</span></div>';
-    }
-    return h;
-  }
-
-  let html = '<div style="text-align:center;margin-bottom:14px;">';
-  html += '<h4 style="margin:0;">📊 ' + prevYear + '年' + prevMonth + '月 收支流水</h4></div>';
-
-  // 收入
-  html += '<p style="color:var(--success);font-weight:bold;margin-bottom:4px;">收入（+' + totalInc + '元）</p>';
-  html += '<div style="background:#1e1e1e;border-radius:4px;padding:8px 10px;margin-bottom:10px;">';
-  html += buildCategoryHTML(incGroups, 'var(--success)');
-  if (Object.keys(incGroups).length === 0) html += '<p style="font-size:12px;color:var(--text-secondary);">暂无</p>';
-  html += '</div>';
-
-  // 支出
-  html += '<p style="color:var(--danger);font-weight:bold;margin-bottom:4px;">支出（-' + totalExp + '元）</p>';
-  html += '<div style="background:#1e1e1e;border-radius:4px;padding:8px 10px;margin-bottom:10px;">';
-  html += buildCategoryHTML(expGroups, 'var(--danger)');
-  if (Object.keys(expGroups).length === 0) html += '<p style="font-size:12px;color:var(--text-secondary);">暂无</p>';
-  html += '</div>';
-
-  // 净收入
-  html += '<div style="display:flex;justify-content:space-between;font-weight:bold;padding:8px 0;border-top:1px solid #333;">';
-  html += '<span>净收入</span><span style="color:' + (net >= 0 ? 'var(--success)' : 'var(--danger)') + ';">' + (net >= 0 ? '+' : '') + net + '元</span></div>';
-  html += '<p style="margin-top:8px;font-size:12px;color:var(--text-secondary);text-align:center;">当前余额：' + G.player.money + '元</p>';
-
-  // 称号展示
-  if (newTitles.length > 0) {
-    html += '<div style="margin-top:14px;padding:10px;background:#1e1e1e;border:1px solid #d4af37;border-radius:6px;text-align:center;">';
-    html += '<p style="color:#d4af37;font-weight:bold;margin-bottom:6px;">🏆 解锁新称号！</p>';
-    newTitles.forEach(function(t) { html += '<p style="color:#d4af37;font-size:14px;margin:3px 0;">「' + t + '」</p>'; });
-    html += '</div>';
-  }
-  if (G.unlockedTitles && G.unlockedTitles.length > 0) {
-    html += '<div style="margin-top:8px;text-align:center;">';
-    html += '<p style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;">已获得称号：</p>';
-    html += '<div style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;">';
-    G.unlockedTitles.forEach(function(t) { html += '<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#1e1e1e;color:#d4af37;border:1px solid #333;">「' + t + '」</span>'; });
-    html += '</div></div>';
-  }
-
-  showModal('月度收支报告', html, [{text:'知道了', cls:'btn-primary', action:closeModal}]);
-}
 
 // ================================================================
 // ===================== 存档系统 ==================================
